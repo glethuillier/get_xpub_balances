@@ -16,6 +16,12 @@ In `main.js`, set the `xpub` and `index` variables.
 
 `$ node main.js`
 
+## Output syntax
+```
+{Address type}
+{Address} ({index}): {balance in bitcoin}
+```
+
 ## Example
 
 ```

@@ -1,5 +1,7 @@
 # Get balances from Xpub
 
+![XPUB](./logo.png)
+
 Get the balances of Bitcoin addresses derivated from an xpub at a specific index (supported: legacy, native Segwit, and Segwit)
 
 The balances are displayed in Bitcoin.

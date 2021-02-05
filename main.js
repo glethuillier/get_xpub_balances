@@ -9,10 +9,10 @@ const xpub = 'xpub...'
 const index = 0
 
 
-const nativeSegwitAPI = 'https://blockstream.info/api/address/'
+const blockstreamAPI = 'https://blockstream.info/api/address/'
 const blockchainAPI = 'https://blockchain.info/q/addressbalance/'
 
-const AddressType = { "legacy" : 1, "native_segwit" : 2, "segwit" : 3 }
+const AddressType = { "legacy" : 1, "native" : 2, "segwit" : 3 }
 Object.freeze(AddressType)
 
 function getAddressType(address) {
@@ -28,28 +28,38 @@ function getAddressType(address) {
 }
 
 function getURL(addressType, address) {
+  var url
+
   switch(addressType) {
     case AddressType.native_segwit:
-      return nativeSegwitAPI + address;
+      url = blockstreamAPI.concat(address);
       break
     case AddressType.legacy:
+      /* fallthrough */
     case AddressType.segwit:
-      return blockchainAPI + address;
+      url = blockchainAPI.concat(address);
       break
   }
+
+  return url
 }
 
-function parseResponse(addressType, response) {
+function extractBalance(addressType, response) {
+  var balance
+
   switch(addressType) {
     case AddressType.native_segwit:
       const satoshis = response.chain_stats.funded_txo_sum
-      return sb.toBitcoin(satoshis)
+      balance = sb.toBitcoin(satoshis)
       break
     case AddressType.legacy:
+      /* fallthrough */
     case AddressType.segwit:
-      return sb.toBitcoin(response)
+      balance = sb.toBitcoin(response)
       break
   }
+
+  return balance
 }
 
 function checkBalance(address, index) {
@@ -61,9 +71,9 @@ function checkBalance(address, index) {
   };
 
   rp(options)
-    .then(function (repos) {
+    .then(function (response) {
       console.log('\n' + Object.keys(AddressType).find(key => AddressType[key] === addressType))
-      console.log(address + " (" + index + "): " + parseResponse(addressType, repos))
+      console.log(address + " (" + index + "): " + extractBalance(addressType, response))
     })
     .catch(function (err) {
       console.log(address + " (" + index + ") [ERROR]: " + err)
@@ -106,7 +116,7 @@ function getSegwitAddress(xpub, index) {
 }
 
 function getAddresses(xpub, index) {
-  let addresses = []
+  var addresses = []
 
   addresses.push(getLegacyAddress(xpub, index))
   addresses.push(getNativeSegwitAddress(xpub, index))

@@ -17,7 +17,7 @@ Object.freeze(AddressType)
 
 function getAddressType(address) {
   if (address.startsWith('bc1')) {
-    return AddressType.native_segwit
+    return AddressType.native
   }
   else if (address.startsWith('3')) {
     return AddressType.segwit
@@ -31,7 +31,7 @@ function getURL(addressType, address) {
   var url
 
   switch(addressType) {
-    case AddressType.native_segwit:
+    case AddressType.native:
       url = blockstreamAPI.concat(address);
       break
     case AddressType.legacy:
@@ -48,7 +48,7 @@ function extractBalance(addressType, response) {
   var balance
 
   switch(addressType) {
-    case AddressType.native_segwit:
+    case AddressType.native:
       const satoshis = response.chain_stats.funded_txo_sum
       balance = sb.toBitcoin(satoshis)
       break

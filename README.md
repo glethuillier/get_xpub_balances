@@ -26,7 +26,7 @@ To override the hardcoded xpub and index:
 
 ## Output
 
-All derived addresses are displayed with the corresponding balance. If an address has a non-zero balance, it is displayed in green. If not, in grey.
+All derived addresses are displayed with the corresponding balance. If an address has a non-zero balance, it is displayed in blue. If not, in grey.
 
 ```
 {Address type}

@@ -10,7 +10,7 @@ var xpub = 'xpub...'
 var index = 0
 
 
-var args = process.argv.slice(2);
+var args = process.argv.slice(2)
 if (typeof args[0] !== 'undefined' && typeof args[1] !== 'undefined') {
   xpub = args[0]
   index = parseInt(args[1])
@@ -29,18 +29,30 @@ function getAddressType(address) {
   else if (address.startsWith('3')) {
     return AddressType.segwit
   }
-  else {
+  else if (address.startsWith('1')) {
     return AddressType.legacy
+  }
+  else {
+    throw new Error(
+      "INVALID ADDRESS: "
+        .concat(address)
+        .concat(" is not a valid address")
+      )
   }
 }
 
-function getURL(addressType, address) {
+function getURI(addressType, address) {
   var url
 
   switch(addressType) {
+    // native Segwit:
+    // blockstream API
     case AddressType.native:
       url = blockstreamAPI.concat(address);
       break
+
+    // legacy and Segwit: 
+    // blockchain.info API
     case AddressType.legacy:
       /* fallthrough */
     case AddressType.segwit:
@@ -55,10 +67,17 @@ function extractBalance(addressType, response) {
   var balance
 
   switch(addressType) {
+    // native Segwit:
+    // blockstream API returns the balance in satoshis
+    // using ['chain_stats']['funded_txo_sum'] path
     case AddressType.native:
       const satoshis = response.chain_stats.funded_txo_sum
       balance = sb.toBitcoin(satoshis)
       break
+
+    // legacy and Segwit:
+    // blockchain.info API returns the balance in satoshis
+    // directly (at the root of the response)
     case AddressType.legacy:
       /* fallthrough */
     case AddressType.segwit:
@@ -72,26 +91,28 @@ function extractBalance(addressType, response) {
 function checkBalance(address) {
   var addressType = getAddressType(address);
 
+  // Type: 
+  // key of enum corresponding to addressType
   const type = chalk.italic(
     Object
       .keys(AddressType)
-      .find(key => AddressType[key] === addressType))
+      .find(key => AddressType[key] === addressType)
+    )
 
   var options = {
-      uri: getURL(addressType, address),
+      uri: getURI(addressType, address),
       json: true
   };
 
   rp(options)
     .then(function (response) {
       const balance = extractBalance(addressType, response)
-
       const status = type
-        .concat("\t")
-        .concat(address)
-        .concat(": ")
-        .concat(balance)
+        .concat("\t").concat(address)
+        .concat(": ").concat(balance)
 
+      // differenciate zero from non-zero balances
+      // using grey v. green colors
       if (balance == 0) {
         console.log(chalk.grey(status))
       }
@@ -101,10 +122,8 @@ function checkBalance(address) {
     })
     .catch(function (err) {
       const error = type
-        .concat("\t")
-        .concat(address)
-        .concat(" [ERROR]: ")
-        .concat(err)
+        .concat("\t").concat(address)
+        .concat(" [ERROR]: ").concat(err)
 
       console.log(chalk.red(error))
     });
@@ -125,7 +144,7 @@ function getNativeSegwitAddress(xpub, index) {
         .fromBase58(xpub)
         .derive(0)
         .derive(index).publicKey,
-  });
+  })
 
   return address
 }
@@ -136,7 +155,7 @@ function getLegacyAddress(xpub, index) {
       .fromBase58(xpub)
       .derive(0)
       .derive(index).publicKey,
-  });
+  })
 
   return address
 }
@@ -149,13 +168,13 @@ function getSegwitAddress(xpub, index) {
         .derive(0)
         .derive(index).publicKey,
     }),
-  });
+  })
 
   return address
 }
 
 function getAddresses(xpub, index) {
-  // Ensure that the xpub is a valid one
+  // ensure that the xpub is a valid one
   checkXpub(xpub)
 
   var addresses = []
@@ -171,11 +190,9 @@ console.log(
   "Addresses derived from xpub "
     .concat(xpub.substr(0, 20))
     .concat("... at index ")
-    .concat(index)
-    .concat("\n")
+    .concat(index).concat("\n")
   )
 
-const addresses = getAddresses(xpub, index)
-addresses.forEach(address => {
+getAddresses(xpub, index).forEach(address => {
   checkBalance(address)
 })

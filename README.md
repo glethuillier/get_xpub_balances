@@ -10,15 +10,24 @@ The balances are displayed in Bitcoin.
 
 `$ npm i`
 
-## Configure
+## Configure (optional)
 
 In `main.js`, set the `xpub` and `index` variables.
 
 ## Run
 
+When xpub and index are hardcoded:
 `$ node main.js`
 
-## Output syntax
+To override the hardcoded xpub and index:
+`$ node main.js <xpub> <index>`
+
+(Example: `$ node main.js xpub6C...44dXs7p 10`)
+
+## Output
+
+All derived addresses are displayed with the corresponding balance.
+
 ```
 {Address type}
 {Address} ({index}): {balance in bitcoin}

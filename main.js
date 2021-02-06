@@ -5,9 +5,15 @@ const rp = require('request-promise');
 const sb = require('satoshi-bitcoin');
 
 // Specify the xpub and the index of the address here
-const xpub = 'xpub...'
-const index = 0
+var xpub = 'xpub...'
+var index = 0
 
+
+var args = process.argv.slice(2);
+if (typeof args[0] !== 'undefined' && typeof args[1] !== 'undefined') {
+  xpub = args[0]
+  index = parseInt(args[1])
+}
 
 const blockstreamAPI = 'https://blockstream.info/api/address/'
 const blockchainAPI = 'https://blockchain.info/q/addressbalance/'
@@ -80,6 +86,15 @@ function checkBalance(address, index) {
     });
 }
 
+function checkXpub(xpub) {
+  try {
+    bip32.fromBase58(xpub)
+  }
+  catch (e) {
+    throw new Error("INVALID XPUB: " + xpub + " is not a valid xpub");
+  }
+}
+
 function getNativeSegwitAddress(xpub, index) {
   const { address } = bjs.payments.p2wpkh({
       pubkey: bip32
@@ -116,6 +131,9 @@ function getSegwitAddress(xpub, index) {
 }
 
 function getAddresses(xpub, index) {
+  // Ensure that the xpub is a valid one
+  checkXpub(xpub)
+
   var addresses = []
 
   addresses.push(getLegacyAddress(xpub, index))
@@ -124,6 +142,7 @@ function getAddresses(xpub, index) {
 
   return addresses
 }
+
 
 const addresses = getAddresses(xpub, index)
 addresses.forEach(address => {

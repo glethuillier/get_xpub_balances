@@ -35,11 +35,4 @@ All derived addresses are displayed with the corresponding balance. If an addres
 
 ## Example
 
-```
-$ node main.js xpub6C2qnauS...R44dXs7p 0
-Addresses derived from xpub xpub6C2qnauSiRRR8UG9... at index 0
-
-legacy  13eyfkTuBqqLmHRdhoDdvFQB61WB68LvLr: 0
-segwit  3JkPDYMkUoDW9654mNaJ9YcJrGpGv3fEjx: 0
-native  bc1qr500ysrg653aaplftaac753srtt2jwtfvcr5vt: 0.00027278
-```
+![EXAMPLE](./example.png)

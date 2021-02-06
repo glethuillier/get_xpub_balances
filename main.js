@@ -112,12 +112,12 @@ function checkBalance(address) {
         .concat(": ").concat(balance)
 
       // differenciate zero from non-zero balances
-      // using grey v. green colors
+      // using grey v. blue colors
       if (balance == 0) {
         console.log(chalk.grey(status))
       }
       else {
-        console.log(chalk.green(status))
+        console.log(chalk.blueBright(status))
       }
     })
     .catch(function (err) {

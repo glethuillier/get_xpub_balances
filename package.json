@@ -17,6 +17,11 @@
   },
   "homepage": "https://github.com/glethuillier/get_xpub_balances#readme",
   "dependencies": {
-    "bitcoinjs-lib": "^5.2.0"
+    "bitcoinjs-lib": "^5.2.0",
+    "chalk": "^4.1.0",
+    "colors": "^1.4.0",
+    "request": "^2.88.2",
+    "request-promise": "^4.2.6",
+    "satoshi-bitcoin": "^1.0.4"
   }
 }

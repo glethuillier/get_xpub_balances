@@ -1,8 +1,9 @@
 const util = require('util')
 const bjs = require('bitcoinjs-lib')
 const bip32 = require('bip32')
-const rp = require('request-promise');
-const sb = require('satoshi-bitcoin');
+const rp = require('request-promise')
+const sb = require('satoshi-bitcoin')
+const chalk = require('chalk');
 
 // Specify the xpub and the index of the address here
 var xpub = 'xpub...'
@@ -68,7 +69,7 @@ function extractBalance(addressType, response) {
   return balance
 }
 
-function checkBalance(address, index) {
+function checkBalance(address) {
   var addressType = getAddressType(address);
 
   var options = {
@@ -78,11 +79,33 @@ function checkBalance(address, index) {
 
   rp(options)
     .then(function (response) {
-      console.log('\n' + Object.keys(AddressType).find(key => AddressType[key] === addressType))
-      console.log(address + " (" + index + "): " + extractBalance(addressType, response))
+      const balance = extractBalance(addressType, response)
+
+      const type = Object
+        .keys(AddressType)
+        .find(key => AddressType[key] === addressType)
+
+      const status = "\n"
+        .concat(type)
+        .concat("\n")
+        .concat(address)
+        .concat(": ")
+        .concat(balance)
+
+      if (balance == 0) {
+        console.log(chalk.grey(status))
+      }
+      else {
+        console.log(chalk.green(status))
+      }
     })
     .catch(function (err) {
-      console.log(address + " (" + index + ") [ERROR]: " + err)
+      console.log(
+        address
+          .concat(" (")
+          .concat(index)
+          .concat(") [ERROR]: ")
+          .concat(err))
     });
 }
 
@@ -91,7 +114,7 @@ function checkXpub(xpub) {
     bip32.fromBase58(xpub)
   }
   catch (e) {
-    throw new Error("INVALID XPUB: " + xpub + " is not a valid xpub");
+    throw new Error("INVALID XPUB: ".concat(xpub).concat(" is not a valid xpub"))
   }
 }
 
@@ -143,8 +166,13 @@ function getAddresses(xpub, index) {
   return addresses
 }
 
+console.log(
+  "Addresses derived from xpub "
+    .concat(xpub.substr(0, 20))
+    .concat("... at index ")
+    .concat(index))
 
 const addresses = getAddresses(xpub, index)
 addresses.forEach(address => {
-  checkBalance(address, index)
+  checkBalance(address)
 })

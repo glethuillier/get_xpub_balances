@@ -26,7 +26,7 @@ To override the hardcoded xpub and index:
 
 ## Output
 
-All derived addresses are displayed with the corresponding balance.
+All derived addresses are displayed with the corresponding balance. If an address has a non-zero balance, it is displayed in green. If not, in grey.
 
 ```
 {Address type}
@@ -36,14 +36,15 @@ All derived addresses are displayed with the corresponding balance.
 ## Example
 
 ```
-$ node main.js 
-
-segwit
-3PCsnjgr21tAHvU1K4FJ667wWKgVAYH15T (16): 0
-
-native_segwit
-bc1qec9qh7dvk85dq2z8dy0sw3mxm6vezd9qp9v7qy (16): 0.00141249
+$ node main.js xpub6C2qnauS...R44dXs7p 0
+Addresses derived from xpub xpub6C2qnauSiRRR8UG9... at index 0
 
 legacy
-1KnSEacMBQzNK5vrNjDLXd8d8T4LpmPccM (16): 0
+13eyfkTuBqqLmHRdhoDdvFQB61WB68LvLr: 0
+
+segwit
+3JkPDYMkUoDW9654mNaJ9YcJrGpGv3fEjx: 0
+
+native
+bc1qr500ysrg653aaplftaac753srtt2jwtfvcr5vt: 0.00027278
 ```

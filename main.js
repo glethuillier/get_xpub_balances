@@ -72,6 +72,11 @@ function extractBalance(addressType, response) {
 function checkBalance(address) {
   var addressType = getAddressType(address);
 
+  const type = chalk.italic(
+    Object
+      .keys(AddressType)
+      .find(key => AddressType[key] === addressType))
+
   var options = {
       uri: getURL(addressType, address),
       json: true
@@ -81,13 +86,8 @@ function checkBalance(address) {
     .then(function (response) {
       const balance = extractBalance(addressType, response)
 
-      const type = Object
-        .keys(AddressType)
-        .find(key => AddressType[key] === addressType)
-
-      const status = "\n"
-        .concat(type)
-        .concat("\n")
+      const status = type
+        .concat("\t")
         .concat(address)
         .concat(": ")
         .concat(balance)
@@ -100,12 +100,13 @@ function checkBalance(address) {
       }
     })
     .catch(function (err) {
-      console.log(
-        address
-          .concat(" (")
-          .concat(index)
-          .concat(") [ERROR]: ")
-          .concat(err))
+      const error = type
+        .concat("\t")
+        .concat(address)
+        .concat(" [ERROR]: ")
+        .concat(err)
+
+      console.log(chalk.red(error))
     });
 }
 
@@ -170,7 +171,9 @@ console.log(
   "Addresses derived from xpub "
     .concat(xpub.substr(0, 20))
     .concat("... at index ")
-    .concat(index))
+    .concat(index)
+    .concat("\n")
+  )
 
 const addresses = getAddresses(xpub, index)
 addresses.forEach(address => {

@@ -19,7 +19,7 @@ if (typeof args[0] !== 'undefined' && typeof args[1] !== 'undefined') {
 const blockstreamAPI = 'https://blockstream.info/api/address/'
 const blockchainAPI = 'https://blockchain.info/q/addressbalance/'
 
-const AddressType = { "legacy" : 1, "native" : 2, "segwit" : 3 }
+const AddressType = { "legacy" : 1, "native" : 2, "SegWit" : 3 }
 Object.freeze(AddressType)
 
 function getAddressType(address) {
@@ -27,7 +27,7 @@ function getAddressType(address) {
     return AddressType.native
   }
   else if (address.startsWith('3')) {
-    return AddressType.segwit
+    return AddressType.SegWit
   }
   else if (address.startsWith('1')) {
     return AddressType.legacy
@@ -45,17 +45,17 @@ function getURI(addressType, address) {
   var url
 
   switch(addressType) {
-    // native Segwit:
+    // native SegWit:
     // blockstream API
     case AddressType.native:
       url = blockstreamAPI.concat(address);
       break
 
-    // legacy and Segwit: 
+    // legacy and SegWit: 
     // blockchain.info API
     case AddressType.legacy:
       /* fallthrough */
-    case AddressType.segwit:
+    case AddressType.SegWit:
       url = blockchainAPI.concat(address);
       break
   }
@@ -67,7 +67,7 @@ function extractBalance(addressType, response) {
   var balance
 
   switch(addressType) {
-    // native Segwit:
+    // native SegWit:
     // blockstream API returns the balance in satoshis
     // using ['chain_stats']['funded_txo_sum'] path
     case AddressType.native:
@@ -75,12 +75,12 @@ function extractBalance(addressType, response) {
       balance = sb.toBitcoin(satoshis)
       break
 
-    // legacy and Segwit:
+    // legacy and SegWit:
     // blockchain.info API returns the balance in satoshis
     // directly (at the root of the response)
     case AddressType.legacy:
       /* fallthrough */
-    case AddressType.segwit:
+    case AddressType.SegWit:
       balance = sb.toBitcoin(response)
       break
   }
@@ -138,7 +138,7 @@ function checkXpub(xpub) {
   }
 }
 
-function getNativeSegwitAddress(xpub, index) {
+function getNativeSegWitAddress(xpub, index) {
   const { address } = bjs.payments.p2wpkh({
       pubkey: bip32
         .fromBase58(xpub)
@@ -160,7 +160,7 @@ function getLegacyAddress(xpub, index) {
   return address
 }
 
-function getSegwitAddress(xpub, index) {
+function getSegWitAddress(xpub, index) {
   const { address } = bjs.payments.p2sh({
     redeem: bjs.payments.p2wpkh({
       pubkey: bip32
@@ -180,8 +180,8 @@ function getAddresses(xpub, index) {
   var addresses = []
 
   addresses.push(getLegacyAddress(xpub, index))
-  addresses.push(getNativeSegwitAddress(xpub, index))
-  addresses.push(getSegwitAddress(xpub, index))
+  addresses.push(getNativeSegWitAddress(xpub, index))
+  addresses.push(getSegWitAddress(xpub, index))
 
   return addresses
 }

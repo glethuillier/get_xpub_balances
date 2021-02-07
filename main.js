@@ -65,27 +65,41 @@ function getURI(addressType, address) {
 
 function extractBalance(addressType, response) {
   var balance
+  var inSatoshis = false
+
 
   switch(addressType) {
     // native SegWit:
     // blockstream API returns the balance in satoshis
     // using ['chain_stats']['funded_txo_sum'] path
     case AddressType.native:
-      const satoshis = response.chain_stats.funded_txo_sum
-      balance = sb.toBitcoin(satoshis)
+      balance = response.chain_stats.funded_txo_sum
+      inSatoshis = true
       break
 
     // legacy and SegWit:
     // blockchain.info API returns the balance in satoshis
-    // directly (at the root of the response)
+    // directly (root of the response)
     case AddressType.legacy:
       /* fallthrough */
     case AddressType.SegWit:
-      balance = sb.toBitcoin(response)
+      balance = response
+      inSatoshis = true
       break
   }
 
-  return balance
+  // catch invalid balances (NaN)
+  if (isNaN(balance)) {
+    return chalk.red("[NaN] " + JSON.stringify(response))
+  }
+
+  // the balance is expected to be displayed in bitcoins
+  if (inSatoshis) {
+    return sb.toBitcoin(balance)
+  }
+  else {
+    return balance
+  }
 }
 
 function checkBalance(address) {
@@ -111,19 +125,26 @@ function checkBalance(address) {
         .concat("\t").concat(address)
         .concat(": ").concat(balance)
 
-      // differenciate zero from non-zero balances
-      // using grey v. blue colors
+      // differenciate between:
+      //  - zero      (grey), 
+      //  - non-zero  (blue)
+      //  - invalid   (red)
+      //  balances
+
       if (balance == 0) {
         console.log(chalk.grey(status))
       }
-      else {
+      else if (!isNaN(balance)) {
         console.log(chalk.blueBright(status))
+      }
+      else {
+        console.log(chalk.red(status))
       }
     })
     .catch(function (err) {
       const error = type
         .concat("\t").concat(address)
-        .concat(" [ERROR]: ").concat(err)
+        .concat(" [ERROR] ").concat(err)
 
       console.log(chalk.red(error))
     });

@@ -17,41 +17,47 @@ function getJson(url) {
   }
 
 
-function logProgress(addressType, index, address, balance) {
-
-    if (address === undefined) {
-        address = "(multiple addresses)"
-    }
-    const progress = 
+function logProgress(addressType, index, address, value) {
+  const progress = 
       chalk.italic(addressType)
         .concat("\t")
         .concat(index)
         .concat("\t")
         .concat(address)
         .concat(": ")
-        .concat(balance)
+        .concat(value.balance)
   
     console.log(chalk.grey(progress))
   }
 
-function logTotal(addressType, balance) {
+function logTotal(addressType, value) {
 
-    if (typeof(addressType) === 'undefined') {
-        return
-    }
+  const balance = value.balance
+  const txs = value.txs
 
-    const type = chalk.italic(addressType)
-    const status = 
-      type
-        .concat("\t")
-        .concat(balance)
-  
-    if (balance == 0) {
-      console.log(chalk.grey(status))
-    }
-    else {
-      console.log(chalk.blueBright(status))
-    }
+  if (typeof(addressType) === 'undefined') {
+      return
   }
+
+  const type = chalk.italic(addressType)
+  var status = 
+    type
+      .concat("\t")
+      .concat(balance)
+
+  if (typeof(txs) !== 'undefined') {
+    status = status
+      .concat("\t")
+      .concat(txs)
+      .concat(" txs")
+  }
+  
+  if (balance == 0) {
+    console.log(chalk.grey(status))
+  }
+  else {
+    console.log(chalk.blueBright(status))
+  }
+}
 
 module.exports = { getJson, logProgress, logTotal }

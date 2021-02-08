@@ -25,7 +25,7 @@ const blockstreamAPI = 'https://blockstream.info/api/address/'
 const blockchainBalanceAPI = 'https://blockchain.info/balance?active='
 const blockchainFullAPI = 'https://blockchain.info/multiaddr?active='
 
-const AddressType = { "legacy" : 1, "native" : 2, "SegWit" : 3 }
+const AddressType = { "legacy" : 1, "native" : 2, "SegWit" : 3, "legacy or SegWit": 4 }
 Object.freeze(AddressType)
 
 
@@ -124,7 +124,9 @@ function checkBalance(address, index) {
   const body = helpers.getJson(getURI(address))
   const balance = extractBalance(addressType.type, address, body)
 
-  return balance
+  return {
+    balance: balance
+  }
 }
 
 function checkXpub(xpub) {
@@ -191,7 +193,7 @@ function getTotalBalanceForLegacyAndSegWit(xpub) {
   const body = helpers.getJson(blockchainFullAPI + xpub)
   var address = undefined
   var balance = 0
-  var addressType = undefined
+  var addressType = AddressType.legacy && AddressType.SegWit
 
   const txs = body.txs
 
@@ -205,12 +207,13 @@ function getTotalBalanceForLegacyAndSegWit(xpub) {
     balance = extractBalance(addressType.type, address, body.addresses[0])
     const maxIndex = body.addresses[0].account_index - 1
 
-    helpers.logProgress(addressType.string, maxIndex, undefined, balance)
+    helpers.logProgress(addressType.string, maxIndex, "multiple addresses", {balance: balance})
   }
   
   return {
     balance: balance,
-    addressType: addressType
+    addressType: addressType.string,
+    txs: txs.length
   }
 }
 
@@ -222,7 +225,7 @@ function getTotalBalanceForNative(xpub) {
   
   for(var index = 0; index < maxExploration; ++index) {
     const address = getAddress(AddressType.native, xpub, index)
-    const currentBalance = checkBalance(address, index)
+    const currentBalance = checkBalance(address, index).balance
   
     if (currentBalance == 0) {
       // if exploration limit is reached, terminate it
@@ -233,17 +236,19 @@ function getTotalBalanceForNative(xpub) {
       emptyBalance++
     }
 
-      helpers.logProgress("native", index, address, currentBalance)
+      helpers.logProgress("native", index, address, {balance: currentBalance})
       totalBalance += currentBalance
       emptyBalance = 0
     }
 
-  return totalBalance
+  return {
+    balance: totalBalance
+  }
 }
 
-function updateBalances(balances, addressType, currentBalance) {
+function updateBalances(balances, addressType, value) {
   if(!balances.get(addressType)) {
-    balances.set(addressType, {balance: currentBalance})
+    balances.set(addressType, value)
   }
   else {
     balances.get(addressType).balance += currentBalance;
@@ -266,7 +271,7 @@ if (typeof(index) === 'undefined') {
   //  - check all active legacy and SegWit addresses
   //  - explore Native SegWit addresses up to a certain point
   const legacyAndSegWit = getTotalBalanceForLegacyAndSegWit(xpub)
-  updateBalances(balances, legacyAndSegWit.addressType, legacyAndSegWit.balance)
+  updateBalances(balances, legacyAndSegWit.addressType, legacyAndSegWit)
   updateBalances(balances, "native", getTotalBalanceForNative(xpub))
 }
 else {
@@ -288,5 +293,5 @@ else {
 console.log(chalk.bold("\nTotal balances"))
 
 for (var [addressType, value] of balances.entries()) {
-  helpers.logTotal(addressType, value.balance)
+  helpers.logTotal(addressType, value)
 }

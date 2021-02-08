@@ -3,7 +3,7 @@ const bjs = require('bitcoinjs-lib')
 const bip32 = require('bip32')
 const rp = require('request-promise')
 const sb = require('satoshi-bitcoin')
-const chalk = require('chalk');
+const chalk = require('chalk')
 
 // Specify the xpub and the index of the address here
 var xpub = 'xpub...'
@@ -48,7 +48,7 @@ function getURI(addressType, address) {
     // native SegWit:
     // blockstream API
     case AddressType.native:
-      url = blockstreamAPI.concat(address);
+      url = blockstreamAPI.concat(address)
       break
 
     // legacy and SegWit: 
@@ -56,7 +56,7 @@ function getURI(addressType, address) {
     case AddressType.legacy:
       /* fallthrough */
     case AddressType.SegWit:
-      url = blockchainAPI.concat(address);
+      url = blockchainAPI.concat(address)
       break
   }
 
@@ -103,7 +103,7 @@ function extractBalance(addressType, response) {
 }
 
 function checkBalance(address) {
-  var addressType = getAddressType(address);
+  var addressType = getAddressType(address)
 
   // Type: 
   // key of enum corresponding to addressType
@@ -116,7 +116,7 @@ function checkBalance(address) {
   var options = {
       uri: getURI(addressType, address),
       json: true
-  };
+  }
 
   rp(options)
     .then(function (response) {
@@ -147,7 +147,7 @@ function checkBalance(address) {
         .concat(" [ERROR] ").concat(err)
 
       console.log(chalk.red(error))
-    });
+    })
 }
 
 function checkXpub(xpub) {
@@ -208,7 +208,7 @@ function getAddresses(xpub, index) {
 }
 
 console.log(
-  "Addresses derived from xpub "
+  "Addresses derived from "
     .concat(xpub.substr(0, 20))
     .concat("... at index ")
     .concat(index).concat("\n")

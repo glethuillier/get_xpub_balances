@@ -1,36 +1,45 @@
-const util = require('util')
 const bjs = require('bitcoinjs-lib')
 const bip32 = require('bip32')
-const rp = require('request-promise')
 const sb = require('satoshi-bitcoin')
 const chalk = require('chalk')
+const helpers = require('./helpers')
 
-// Specify the xpub and the index of the address here
 var xpub = 'xpub...'
-var index = 0
+var index = undefined
 
+// limit to the derivation of Native SegWit addresses:
+// when a balance == 0 sequentially in this limit,
+// the exploration is terminated
+const maxExploration = 10
 
 var args = process.argv.slice(2)
-if (typeof args[0] !== 'undefined' && typeof args[1] !== 'undefined') {
+if (typeof args[0] !== 'undefined') {
   xpub = args[0]
+}
+
+if (typeof args[1] !== 'undefined') {
   index = parseInt(args[1])
 }
 
 const blockstreamAPI = 'https://blockstream.info/api/address/'
-const blockchainAPI = 'https://blockchain.info/q/addressbalance/'
+const blockchainBalanceAPI = 'https://blockchain.info/balance?active='
+const blockchainFullAPI = 'https://blockchain.info/multiaddr?active='
 
 const AddressType = { "legacy" : 1, "native" : 2, "SegWit" : 3 }
 Object.freeze(AddressType)
 
+
 function getAddressType(address) {
+  var type = undefined
+
   if (address.startsWith('bc1')) {
-    return AddressType.native
+    type = AddressType.native
   }
   else if (address.startsWith('3')) {
-    return AddressType.SegWit
+    type = AddressType.SegWit
   }
   else if (address.startsWith('1')) {
-    return AddressType.legacy
+    type = AddressType.legacy
   }
   else {
     throw new Error(
@@ -39,12 +48,21 @@ function getAddressType(address) {
         .concat(" is not a valid address")
       )
   }
+
+  const typeAsString = Object
+    .keys(AddressType)
+    .find(key => AddressType[key] === type) 
+
+  return {
+    type: type, 
+    string: typeAsString
+  }
 }
 
-function getURI(addressType, address) {
+function getURI(address) {
   var url
 
-  switch(addressType) {
+  switch(getAddressType(address).type) {
     // native SegWit:
     // blockstream API
     case AddressType.native:
@@ -56,17 +74,16 @@ function getURI(addressType, address) {
     case AddressType.legacy:
       /* fallthrough */
     case AddressType.SegWit:
-      url = blockchainAPI.concat(address)
+      url = blockchainBalanceAPI.concat(address)
       break
   }
 
   return url
 }
 
-function extractBalance(addressType, response) {
+function extractBalance(addressType, address, response) {
   var balance
   var inSatoshis = false
-
 
   switch(addressType) {
     // native SegWit:
@@ -83,7 +100,7 @@ function extractBalance(addressType, response) {
     case AddressType.legacy:
       /* fallthrough */
     case AddressType.SegWit:
-      balance = response
+      balance = response.final_balance || response[address].final_balance
       inSatoshis = true
       break
   }
@@ -102,52 +119,12 @@ function extractBalance(addressType, response) {
   }
 }
 
-function checkBalance(address) {
-  var addressType = getAddressType(address)
+function checkBalance(address, index) {
+  const addressType = getAddressType(address)
+  const body = helpers.getJson(getURI(address))
+  const balance = extractBalance(addressType.type, address, body)
 
-  // Type: 
-  // key of enum corresponding to addressType
-  const type = chalk.italic(
-    Object
-      .keys(AddressType)
-      .find(key => AddressType[key] === addressType)
-    )
-
-  var options = {
-      uri: getURI(addressType, address),
-      json: true
-  }
-
-  rp(options)
-    .then(function (response) {
-      const balance = extractBalance(addressType, response)
-      const status = type
-        .concat("\t").concat(address)
-        .concat(": ").concat(balance)
-
-      // differenciate between:
-      //  - zero      (grey), 
-      //  - non-zero  (blue)
-      //  - invalid   (red)
-      //  balances
-
-      if (balance == 0) {
-        console.log(chalk.grey(status))
-      }
-      else if (!isNaN(balance)) {
-        console.log(chalk.blueBright(status))
-      }
-      else {
-        console.log(chalk.red(status))
-      }
-    })
-    .catch(function (err) {
-      const error = type
-        .concat("\t").concat(address)
-        .concat(" [ERROR] ").concat(err)
-
-      console.log(chalk.red(error))
-    })
+  return balance
 }
 
 function checkXpub(xpub) {
@@ -194,26 +171,122 @@ function getSegWitAddress(xpub, index) {
   return address
 }
 
-function getAddresses(xpub, index) {
-  // ensure that the xpub is a valid one
-  checkXpub(xpub)
-
-  var addresses = []
-
-  addresses.push(getLegacyAddress(xpub, index))
-  addresses.push(getNativeSegWitAddress(xpub, index))
-  addresses.push(getSegWitAddress(xpub, index))
-
-  return addresses
+function getAddress(addressType, xpub, index) {
+  switch(addressType) {
+    case AddressType.legacy:
+      return getLegacyAddress(xpub, index);
+      break
+    case AddressType.native:
+      return getNativeSegWitAddress(xpub, index)
+      break
+    case AddressType.SegWit:
+      return getSegWitAddress(xpub, index)
+      break
+  }
 }
+
+// for legacy and SegWit, just use the blockchain.info API
+// that automatically returns this kind of information
+function getTotalBalanceForLegacyAndSegWit(xpub) {
+  const body = helpers.getJson(blockchainFullAPI + xpub)
+  var address = undefined
+  var balance = 0
+  var addressType = undefined
+
+  const txs = body.txs
+
+  // if there are transactions, fetch:
+  //  - balance
+  //  - address type
+  //  - max index used
+  if (Array.isArray(txs) && txs.length > 0) {
+    address = txs[0].inputs[0].prev_out.addr
+    addressType = getAddressType(address)
+    balance = extractBalance(addressType.type, address, body.addresses[0])
+    const maxIndex = body.addresses[0].account_index - 1
+
+    helpers.logProgress(addressType.string, maxIndex, undefined, balance)
+  }
+  
+  return {
+    balance: balance,
+    addressType: addressType
+  }
+}
+
+// for native SegWit, derive addresses up to a certain point
+// and check each balance
+function getTotalBalanceForNative(xpub) {
+  var totalBalance = 0
+  var emptyBalance = 0
+  
+  for(var index = 0; index < maxExploration; ++index) {
+    const address = getAddress(AddressType.native, xpub, index)
+    const currentBalance = checkBalance(address, index)
+  
+    if (currentBalance == 0) {
+      // if exploration limit is reached, terminate it
+      if (emptyBalance >= maxExploration) {
+          break
+      }
+  
+      emptyBalance++
+    }
+
+      helpers.logProgress("native", index, address, currentBalance)
+      totalBalance += currentBalance
+      emptyBalance = 0
+    }
+
+  return totalBalance
+}
+
+function updateBalances(balances, addressType, currentBalance) {
+  if(!balances.get(addressType)) {
+    balances.set(addressType, {balance: currentBalance})
+  }
+  else {
+    balances.get(addressType).balance += currentBalance;
+  }
+}
+
+
+checkXpub(xpub)
 
 console.log(
   "Addresses derived from "
     .concat(xpub.substr(0, 20))
-    .concat("... at index ")
-    .concat(index).concat("\n")
+    .concat("...\n")
   )
 
-getAddresses(xpub, index).forEach(address => {
-  checkBalance(address)
-})
+let balances = new Map();
+
+if (typeof(index) === 'undefined') {
+  // Option A: no index has been provided:
+  //  - check all active legacy and SegWit addresses
+  //  - explore Native SegWit addresses up to a certain point
+  const legacyAndSegWit = getTotalBalanceForLegacyAndSegWit(xpub)
+  updateBalances(balances, legacyAndSegWit.addressType, legacyAndSegWit.balance)
+  updateBalances(balances, "native", getTotalBalanceForNative(xpub))
+}
+else {
+  // Option B: an index has been provided:
+  // derive all addresses at that index and check
+  // their respective balances
+  [
+    getLegacyAddress(xpub, index), 
+    getSegWitAddress(xpub, index), 
+    getNativeSegWitAddress(xpub, index)
+  ].forEach(address => {
+    const balance = checkBalance(address, index)
+    const addressType = getAddressType(address).string
+    helpers.logProgress(addressType, index, address, balance)
+    updateBalances(balances, addressType, balance)
+  })
+}
+
+console.log(chalk.bold("\nTotal balances"))
+
+for (var [addressType, value] of balances.entries()) {
+  helpers.logTotal(addressType, value.balance)
+}

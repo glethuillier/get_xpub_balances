@@ -14,13 +14,17 @@ In `main.js`, set the `xpub` and `index` variables.
 
 ## Run
 
-If xpub and index are hardcoded:
-`$ node main.js`
+### Option A: addresses at a specific index
 
-To override the hardcoded xpub and index:
 `$ node main.js <xpub> <index>`
 
-(Example: `$ node main.js xpub6C...44dXs7p 0`)
+(Example: `$ node main.js xpub6C...44dXs7p 10`)
+
+### Option B: all active addresses
+
+`$ node main.js <xpub>`
+
+(Example: `$ node main.js xpub6C...44dXs7p`)
 
 ## Output
 

@@ -187,16 +187,12 @@ function getLegacyOrSegWitInfos(xpub) {
   }
 }
 
-// TODO: enhance the logic of this implementation
-// to take into account edge cases
-function getSentTx(ownAddresses, knownAddressesGlobal, address) {
-  const res = helpers.getJson(blockstreamAPI + address + "/txs")
+function getSentTx(ownAddresses, knownAddresses, address) {
+  const res = helpers.getJson(blockstreamAPI.concat(address).concat("/txs"))
 
-  var sent = 0
-  var additionnalKnownAddresses = []
-  var knownAddresses = knownAddressesGlobal
+  var sentAmount = 0
+  var recipientAddresses = []
   var outTxs = []
-  var sentToSelf = false
 
   res.forEach(tx => {
     tx.vout.forEach(vout => {
@@ -204,39 +200,46 @@ function getSentTx(ownAddresses, knownAddressesGlobal, address) {
     })
   })
 
-  // edge case: send to self
-  if (outTxs.every(v => ownAddresses.includes(v.scriptpubkey_address))) {
-    sent = outTxs[0].value
-    sentToSelf = true
+  // are all out addresses internal ones?
+  const sentToSelf = outTxs.every(v => ownAddresses.includes(v.scriptpubkey_address))
+
+  if (sentToSelf) { 
+    // edge case: self-sent transaction
+    sentAmount = outTxs[0].value
   }
-  else {
+  else { 
+    // common case: sent to external address
     for (var i = 0; i < outTxs.length; ++i) {
       const outAddress = outTxs[i].scriptpubkey_address
-      
-      if (!knownAddresses.includes(outAddress) && sent == 0) {
+
+      // is it a known address?
+      const knownAddress = knownAddresses.includes(outAddress)
+
+      if (!knownAddress) {
         // sent to unknown address
-        sent = outTxs[i].value
-        additionnalKnownAddresses.push(outAddress)
+        sentAmount = outTxs[i].value
+        recipientAddresses.push(outAddress)
         break
       }
       else {
-        // remove instance of address existing in known addresses array
-        // (in case subsequent funds are sent to the same address)
-        knownAddresses = knownAddresses.filter(item => item !== outAddress)
+        // remove one instance of known external address at a time
+        // to take into account subsequent funds sent to the same external address
+        knownAddresses = knownAddresses.filter(a => a !== outAddress)
       }
     }
   }
 
   return {
-    sent: sent,
+    sent: sentAmount,
     sentToSelf: sentToSelf,
-    addresses: additionnalKnownAddresses
+    addresses: recipientAddresses
   }
 }
 
 // generate addresses associated with the xpub
 function generateOwnAddresses(addressType, xpub) {
   var changeAddresses = []
+
   for(var index = 0; index < 10000; ++index) {
     changeAddresses.push(getAddress(addressType, xpub, 0, index))
     changeAddresses.push(getAddress(addressType, xpub, 1, index))

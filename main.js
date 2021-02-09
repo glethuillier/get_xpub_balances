@@ -8,22 +8,29 @@ var xpub = 'xpub...'
 var index = undefined
 var account = undefined
 
+// Option 1: one arg -> xpub
 var args = process.argv.slice(2)
 if (typeof args[0] !== 'undefined') {
   xpub = args[0]
 }
 
+// Option 2: three args -> xpub account index
 if (typeof args[2] !== 'undefined') {
   account = parseInt(args[1])
   index = parseInt(args[2])
 }
 
-const blockstreamAPI = 'https://blockstream.info/api/address/'
+// blockchain.info API to retrieve the number of txs for a legacy or SegWit xpub
 const blockchainAPI = 'https://blockchain.info/multiaddr?active='
+
+// blockstream API to retrieve stats related to a given address
+// (less rate limited than the blockchain.info one)
+const blockstreamAPI = 'https://blockstream.info/api/address/'
 
 const AddressType = { LEGACY: "legacy", NATIVE: "native", SEGWIT: "SegWit", LEGACY_OR_SEGWIT: "legacy/SegWit" }
 Object.freeze(AddressType)
 
+// infer address type from its syntax
 function getAddressType(address) {
   var type = undefined
 
@@ -47,7 +54,8 @@ function getAddressType(address) {
   return type
 }
 
-function checkBalance(address, index) {
+// get stats (balance, txs sum and count) for an address
+function getStats(address) {
   const res = helpers.getJson(blockstreamAPI + address)
   const stats = res.chain_stats
 
@@ -65,6 +73,7 @@ function checkBalance(address, index) {
   }
 }
 
+// ensure that the xpub is a valid one
 function checkXpub(xpub) {
   try {
     bip32.fromBase58(xpub)
@@ -74,17 +83,7 @@ function checkXpub(xpub) {
   }
 }
 
-function getNativeSegWitAddress(xpub, account, index) {
-  const { address } = bjs.payments.p2wpkh({
-      pubkey: bip32
-        .fromBase58(xpub)
-        .derive(account)
-        .derive(index).publicKey,
-  })
-
-  return address
-}
-
+// derive legacy address at account and index positions
 function getLegacyAddress(xpub, account, index) {
   const { address } = bjs.payments.p2pkh({
     pubkey: bip32
@@ -96,6 +95,19 @@ function getLegacyAddress(xpub, account, index) {
   return address
 }
 
+// derive native SegWit at account and index positions
+function getNativeSegWitAddress(xpub, account, index) {
+  const { address } = bjs.payments.p2wpkh({
+      pubkey: bip32
+        .fromBase58(xpub)
+        .derive(account)
+        .derive(index).publicKey,
+  })
+
+  return address
+}
+
+// derive SegWit at account and index positions
 function getSegWitAddress(xpub, account, index) {
   const { address } = bjs.payments.p2sh({
     redeem: bjs.payments.p2wpkh({
@@ -123,12 +135,12 @@ function getAddress(addressType, xpub, account, index) {
   }
 }
 
-function updateInfos(infos, addressType, value) {
-  if(!infos.get(addressType)) {
-    infos.set(addressType, value)
+function updateSummary(summary, addressType, value) {
+  if(!summary.get(addressType)) {
+    summary.set(addressType, value)
   }
   else {
-    infos.get(addressType).balance += value.balance
+    summary.get(addressType).balance += value.balance
   }
 }
 
@@ -144,15 +156,22 @@ function getLegacyOrSegWitInfos(xpub) {
   var balance = 0
   var uniqueTxs = new Set(); 
 
+  // iterate over blockchain.info endpoint offset
+  // in order to get all transactions hashs
+  // and make them uniques
   for(var offset = 0; offset < 1000; offset += 10) {
     const url = baseUrl.concat(offset)
     const res = helpers.getJson(url)
 
+    // retrieve the balance once
     if (offset == 0) {
       res.addresses.forEach(item => balance += item.final_balance)
     }
+
     const txs = res.txs
 
+    // no txs found: 
+    // no need to continue increasing the offset
     if (txs.length == 0) {
       break
     }
@@ -167,6 +186,7 @@ function getLegacyOrSegWitInfos(xpub) {
   }
 }
 
+// scan all active addresses
 function scanAddresses(addressType, xpub) {
   helpers.logStatus("Scanning ".concat(chalk.bold(addressType)).concat(" addresses..."))
 
@@ -181,7 +201,7 @@ function scanAddresses(addressType, xpub) {
       const res = helpers.getJson(blockstreamAPI + address)
 
       const txs_count = res.chain_stats.tx_count
-      const total_received = res.chain_stats.funded_txo_sum
+      //const total_received = res.chain_stats.funded_txo_sum
       const funded_count = res.chain_stats.funded_txo_count
       const spent_count = res.chain_stats.spent_txo_count
       const funded_sum = res.chain_stats.funded_txo_sum
@@ -189,6 +209,8 @@ function scanAddresses(addressType, xpub) {
 
       if (txs_count == 0) {
         if (index == 0) {
+          // if at account X index 0 there is no transaction,
+          // all active addresses have been explored: return
           helpers.logStatus(addressType.concat(" addresses scanned\n"))
           return {
             balance: sb.toBitcoin(totalBalance),
@@ -197,15 +219,17 @@ function scanAddresses(addressType, xpub) {
           } 
         }
 
+        // if at account X index Y there is no transaction,
+        // all active addresses for account X have been explored: break
         helpers.logStatus("- account " + account + " fully scanned -")
         break
       }
 
-      var currentBalance = 0
-      currentBalance += funded_sum
-      currentBalance -= spent_sum
+      const currentBalance = funded_sum - spent_sum
 
-      totalBalance += currentBalance
+      // TODO?: totalBalance could be compared with the stat
+      // returned by blockchain.info API
+      // totalBalance += currentBalance
 
       var tx = {
         address: res.address,
@@ -230,33 +254,34 @@ let infos = new Map();
 
 if (typeof(index) === 'undefined') {
   // Option A: no index has been provided:
-  //  - retrieve info for legacy/SegWit
+  //  - retrieve stats for legacy/SegWit
   //  - scan Native SegWit addresses
   const legacyOrSegwit = getLegacyOrSegWitInfos(xpub)
-  updateInfos(infos, AddressType.LEGACY_OR_SEGWIT, legacyOrSegwit)
+  updateSummary(infos, AddressType.LEGACY_OR_SEGWIT, legacyOrSegwit)
 
   const nativeSegwit = scanAddresses(AddressType.NATIVE, xpub)
-  updateInfos(infos, AddressType.NATIVE, nativeSegwit)
+  updateSummary(infos, AddressType.NATIVE, nativeSegwit)
 }
 else {
   // Option B: an index has been provided:
-  // derive all addresses at that index and check
-  // their respective balances
+  // derive all addresses at that account and index; then
+  // check their respective balances
   [
     getLegacyAddress(xpub, account, index), 
     getSegWitAddress(xpub, account, index), 
     getNativeSegWitAddress(xpub, account, index)
   ].forEach(address => {
-    const balance = checkBalance(address, index)
+
+    const balance = getStats(address)
     const addressType = getAddressType(address)
+
     helpers.logProgress(addressType, account, index, balance)
-    updateInfos(infos, addressType, balance)
+    updateSummary(infos, addressType, balance)
+
   })
 }
 
-// function logProgress(addressType, account, index, tx)
-
-console.log(chalk.bold("\nTotal balances"))
+console.log(chalk.bold("\nSummary"))
 
 for (var [addressType, value] of infos.entries()) {
   helpers.logTotal(addressType, value)

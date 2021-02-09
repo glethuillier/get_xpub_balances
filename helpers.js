@@ -17,31 +17,25 @@ function getJson(url) {
   }
 
 
-function logProgress(addressType, account, index, tx) {
+function logProgress(addressType, account, index, item) {
   const derivationPath = String("m/" + account + "/" + index)
-  var balance = String(tx.balance)
-
-  if (balance != 0) {
-    balance = chalk.greenBright(balance)
-  }
-
-  const address = tx.address.padEnd(34, ' ')
-  const fundedSum = String(tx.funded_sum).padEnd(10, ' ')
-  const spentSum = String(tx.spent_sum).padEnd(10, ' ')
+  var balance = String(item.balance)
+  const address = item.address.padEnd(34, ' ')
+  const fundedSum = String(item.funded_sum).padEnd(10, ' ')
+  const spentSum = String(item.spent_sum).padEnd(10, ' ')
   const progress = 
       chalk.italic(addressType.padEnd(16, ' '))
         .concat(derivationPath.padEnd(12, ' '))
         .concat(address.padEnd(46, ' '))
-        .concat(String(tx.balance).padEnd(16, ' '))
-        .concat("+" + fundedSum).concat(" (").concat(tx.funded_count).concat(") ") // funded tx
+        .concat(balance.padEnd(16, ' '))
+        .concat("+" + fundedSum).concat(" (").concat(item.funded_count).concat(") ") // funded tx
         .concat("\t-")
-        .concat(spentSum).concat(" (").concat(tx.spent_count).concat(") ") // spent tx
+        .concat(spentSum).concat(" (").concat(item.spent_count).concat(") ") // spent tx
   
     console.log("  ".concat(progress))
   }
 
-function logTotal(addressType, value) {
-
+function showSummary(addressType, value) {
   const balance = String(value.balance).padEnd(12, ' ')
   const txs_count = value.txs_count
 
@@ -73,8 +67,6 @@ function logTotal(addressType, value) {
         status = status.concat(" txs")
       }
   }
-
-  
   
   if (balance == 0) {
     console.log(chalk.grey(status))
@@ -88,4 +80,4 @@ function logStatus(status) {
   console.log(chalk.dim(status))
 }
 
-module.exports = { getJson, logProgress, logTotal, logStatus }
+module.exports = { getJson, logProgress, logTotal: showSummary, logStatus }

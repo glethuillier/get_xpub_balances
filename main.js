@@ -174,36 +174,6 @@ function getAddress(addressType, xpub, account, index) {
   }
 }
 
-// // for legacy and SegWit, just use the blockchain.info API
-// // that automatically returns this kind of information
-// function getTotalBalanceForLegacyAndSegWit(xpub) {
-//   const body = helpers.getJson(blockchainFullAPI + xpub)
-//   var address = undefined
-//   var balance = 0
-//   var addressType = AddressType.LEGACY && AddressType.SEGWIT
-
-//   const txs = body.txs
-
-//   // if there are transactions, fetch:
-//   //  - balance
-//   //  - address type
-//   //  - max index used
-//   if (Array.isArray(txs) && txs.length > 0) {
-//     address = txs[0].inputs[0].prev_out.addr
-//     addressType = getAddressType(address)
-//     balance = extractBalance(addressType.type, address, body.addresses[0])
-//     const maxIndex = body.addresses[0].account_index - 1
-
-//     helpers.logProgress(addressType.string, maxIndex, "multiple addresses", {balance: balance})
-//   }
-  
-//   return {
-//     balance: balance,
-//     addressType: addressType.string,
-//     txs: txs.length
-//   }
-// }
-
 function updateInfos(infos, addressType, value) {
   if(!infos.get(addressType)) {
     infos.set(addressType, value)
@@ -262,7 +232,7 @@ function scanAddresses(addressType, xpub) {
       const res = helpers.getJson(blockstreamAPI + address)
 
       const txs_count = res.chain_stats.tx_count
-      const balance = res.chain_stats.funded_txo_sum
+      const total_received = res.chain_stats.funded_txo_sum
       const funded_count = res.chain_stats.funded_txo_count
       const spent_count = res.chain_stats.spent_txo_count
       const funded_sum = res.chain_stats.funded_txo_sum
@@ -287,7 +257,7 @@ function scanAddresses(addressType, xpub) {
 
       var tx = {
         address: res.address,
-        balance: sb.toBitcoin(balance),
+        total_received: sb.toBitcoin(total_received),
         funded_count: funded_count,
         funded_sum: sb.toBitcoin(funded_sum),
         spent_count: spent_count,
@@ -303,6 +273,12 @@ function scanAddresses(addressType, xpub) {
 }
 
 checkXpub(xpub)
+
+console.log(
+  "Addresses derived from "
+    .concat(xpub.substr(0, 20))
+    .concat("...\n")
+  )
 
 let infos = new Map();
 

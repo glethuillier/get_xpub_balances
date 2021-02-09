@@ -18,13 +18,16 @@ function getJson(url) {
 
 
 function logProgress(addressType, account, index, tx) {
+  const totalReceived = String(tx.total_received).padEnd(10, ' ')
+  const fundedSum = String(tx.funded_sum).padEnd(10, ' ')
+  const spentSum = String(tx.spent_sum).padEnd(10, ' ')
   const progress = 
       chalk.italic(addressType)
         .concat("\tM/").concat(account).concat("/").concat(index) // derivation path
-        .concat("\t").concat(tx.address).concat(": ") // address
-        .concat(tx.balance) // balance
-        .concat("\t\ttxs: -").concat(tx.funded_sum).concat(" (").concat(tx.funded_count).concat(") ") // funded tx
-        .concat("\t+").concat(tx.spent_sum).concat(" (").concat(tx.spent_count).concat(") ") // spent tx
+        .concat("\t").concat(tx.address).concat("\t") // address
+        .concat(totalReceived.padEnd(10, ' ')).concat("\t") // total received
+        .concat("\t+").concat(fundedSum).concat(" (").concat(tx.funded_count).concat(") ") // funded tx
+        .concat("\t-").concat(spentSum).concat(" (").concat(tx.spent_count).concat(") ") // spent tx
   
     console.log(progress)
   }

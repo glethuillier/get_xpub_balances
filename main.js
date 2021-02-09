@@ -214,7 +214,11 @@ function updateInfos(infos, addressType, value) {
 }
 
 function getLegacyOrSegWitInfos(xpub) {
-  console.log(chalk.italic("Fetching legacy/SegWit infos..."))
+
+  scanAddresses(AddressType.LEGACY, xpub)
+  scanAddresses(AddressType.SEGWIT, xpub)
+
+  helpers.logStatus("Fetching legacy/SegWit infos...")
 
   const baseUrl = blockchainFullAPI.concat(xpub).concat("&offset=")
 
@@ -245,12 +249,14 @@ function getLegacyOrSegWitInfos(xpub) {
 }
 
 function scanAddresses(addressType, xpub) {
-  console.log(chalk.italic("Scanning Native Segwit addresses..."))
+  helpers.logStatus("Scanning ".concat(chalk.bold(addressType)).concat(" addresses..."))
 
   var txs = []
   var totalBalance = 0
 
   for(var account = 0; account < 10 ; ++account) {
+    helpers.logStatus("- scanning account " + account + " -")
+
     for(var index = 0; index < 1000; ++index) {
       const address = getAddress(addressType, xpub, account, index)
       const res = helpers.getJson(blockstreamAPI + address)
@@ -267,7 +273,7 @@ function scanAddresses(addressType, xpub) {
 
       if (txs_count == 0) {
         if (index == 0) {
-          console.log(chalk.italic("xpub explored"))
+          helpers.logStatus(addressType.concat(" addresses scanned\n"))
           return {
             balance: sb.toBitcoin(totalBalance),
             txs_count: txs.size,
@@ -275,17 +281,17 @@ function scanAddresses(addressType, xpub) {
           } 
         }
 
-        console.log(chalk.italic("account " + account + " explored"))
+        helpers.logStatus("- account " + account + " fully scanned -")
         break
       }
 
       var tx = {
         address: res.address,
-        balance: balance,
+        balance: sb.toBitcoin(balance),
         funded_count: funded_count,
-        funded_sum: funded_sum,
+        funded_sum: sb.toBitcoin(funded_sum),
         spent_count: spent_count,
-        spent_sum: spent_sum,
+        spent_sum: sb.toBitcoin(spent_sum),
         txs_count: txs_count
       }
       
@@ -298,12 +304,6 @@ function scanAddresses(addressType, xpub) {
 
 checkXpub(xpub)
 
-console.log(
-  "Addresses derived from "
-    .concat(xpub.substr(0, 20))
-    .concat("...\n")
-  )
-
 let infos = new Map();
 
 if (typeof(index) === 'undefined') {
@@ -314,18 +314,13 @@ if (typeof(index) === 'undefined') {
   updateInfos(infos, AddressType.LEGACY_OR_SEGWIT, legacyOrSegwit)
 
   if (legacyOrSegwit.txs_count == 0) {
-    console.log(
-      chalk.italic(
-        "No transaction found for legacy or SegWit addresses. Scanning Native SegWit..."
-      ))
+    helpers.logStatus("No transaction found for legacy or SegWit addresses. Scanning Native SegWit...\n")
     const nativeSegwit = scanAddresses(AddressType.NATIVE, xpub)
     updateInfos(infos, AddressType.NATIVE, nativeSegwit)
   }
   else {
-    console.log(
-      chalk.italic(
-        "Transactions found on legacy or SegWit: Native Segwit skipped"
-      ))
+    helpers.logStatus("Transactions found on legacy or SegWit: Native Segwit skipped\n")
+    updateInfos(infos, AddressType.NATIVE, {})
   }
 }
 else {

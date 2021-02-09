@@ -249,14 +249,14 @@ function scanAddresses(addressType, xpub) {
 
   var txs = []
   var totalBalance = 0
-  var testTxCounter = 0
+
   for(var account = 0; account < 10 ; ++account) {
     for(var index = 0; index < 1000; ++index) {
       const address = getAddress(addressType, xpub, account, index)
       const res = helpers.getJson(blockstreamAPI + address)
 
       const txs_count = res.chain_stats.tx_count
-      const balance = sb.toBitcoin(res.chain_stats.funded_txo_sum)
+      const balance = res.chain_stats.funded_txo_sum
       const funded_count = res.chain_stats.funded_txo_count
       const spent_count = res.chain_stats.spent_txo_count
       const funded_sum = res.chain_stats.funded_txo_sum
@@ -269,7 +269,7 @@ function scanAddresses(addressType, xpub) {
         if (index == 0) {
           console.log(chalk.italic("xpub explored"))
           return {
-            balance: totalBalance,
+            balance: sb.toBitcoin(totalBalance),
             txs_count: txs.size,
             txs: txs
           } 
@@ -281,7 +281,7 @@ function scanAddresses(addressType, xpub) {
 
       var tx = {
         address: res.address,
-        balance: sb.toBitcoin(totalBalance),
+        balance: balance,
         funded_count: funded_count,
         funded_sum: funded_sum,
         spent_count: spent_count,

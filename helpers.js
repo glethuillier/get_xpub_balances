@@ -17,15 +17,14 @@ function getJson(url) {
   }
 
 
-function logProgress(addressType, index, address, value) {
+function logProgress(addressType, account, index, tx) {
   const progress = 
       chalk.italic(addressType)
-        .concat("\t")
-        .concat(index)
-        .concat("\t")
-        .concat(address)
-        .concat(": ")
-        .concat(value.balance)
+        .concat("\tM/").concat(account).concat("/").concat(index) // derivation path
+        .concat("\t").concat(tx.address).concat(": ") // address
+        .concat(tx.balance) // balance
+        .concat("\t\ttxs: -").concat(tx.funded_sum).concat(" (").concat(tx.funded_count).concat(") ") // funded tx
+        .concat("\t+").concat(tx.spent_sum).concat(" (").concat(tx.spent_count).concat(") ") // spent tx
   
     console.log(chalk.grey(progress))
   }
@@ -33,11 +32,7 @@ function logProgress(addressType, index, address, value) {
 function logTotal(addressType, value) {
 
   const balance = value.balance
-  const txs = value.txs
-
-  if (typeof(addressType) === 'undefined') {
-      return
-  }
+  const txs_count = value.txs_count
 
   const type = chalk.italic(addressType)
   var status = 
@@ -45,10 +40,10 @@ function logTotal(addressType, value) {
       .concat("\t")
       .concat(balance)
 
-  if (typeof(txs) !== 'undefined') {
+  if (typeof(txs_count) !== 'undefined') {
     status = status
       .concat("\t")
-      .concat(txs)
+      .concat(txs_count)
       .concat(" txs")
   }
   

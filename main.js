@@ -237,10 +237,7 @@ function scanAddresses(addressType, xpub) {
       const spent_count = res.chain_stats.spent_txo_count
       const funded_sum = res.chain_stats.funded_txo_sum
       const spent_sum = res.chain_stats.spent_txo_sum
-
-      totalBalance += funded_sum
-      totalBalance -= spent_sum
-
+      
       if (txs_count == 0) {
         if (index == 0) {
           helpers.logStatus(addressType.concat(" addresses scanned\n"))
@@ -255,9 +252,15 @@ function scanAddresses(addressType, xpub) {
         break
       }
 
+      var currentBalance = 0
+      currentBalance += funded_sum
+      currentBalance -= spent_sum
+
+      totalBalance += currentBalance
+
       var tx = {
         address: res.address,
-        total_received: sb.toBitcoin(total_received),
+        balance: sb.toBitcoin(currentBalance),
         funded_count: funded_count,
         funded_sum: sb.toBitcoin(funded_sum),
         spent_count: spent_count,

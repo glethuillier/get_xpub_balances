@@ -18,18 +18,19 @@ function getJson(url) {
 
 
 function logProgress(addressType, account, index, tx) {
-  const totalReceived = String(tx.total_received).padEnd(10, ' ')
+  const derivationPath = String("m/" + account + "/" + index).padEnd(12, ' ')
+  const balance = String(tx.balance).padEnd(10, ' ')
   const fundedSum = String(tx.funded_sum).padEnd(10, ' ')
   const spentSum = String(tx.spent_sum).padEnd(10, ' ')
   const progress = 
       chalk.italic(addressType)
-        .concat("\tM/").concat(account).concat("/").concat(index) // derivation path
-        .concat("\t").concat(tx.address).concat("\t") // address
-        .concat(totalReceived.padEnd(10, ' ')).concat("\t") // total received
+        .concat("\t").concat(derivationPath)
+        .concat(tx.address).concat("\t")
+        .concat(balance.padEnd(10, ' ')).concat("\t") // total received
         .concat("\t+").concat(fundedSum).concat(" (").concat(tx.funded_count).concat(") ") // funded tx
         .concat("\t-").concat(spentSum).concat(" (").concat(tx.spent_count).concat(") ") // spent tx
   
-    console.log(progress)
+    console.log("  ".concat(progress))
   }
 
 function logTotal(addressType, value) {
@@ -57,7 +58,13 @@ function logTotal(addressType, value) {
     status = status
       .concat("\t")
       .concat(txs_count)
-      .concat(" txs")
+  }
+
+  if (txs_count < 2) {
+    status = status.concat(" tx")
+  }
+  else {
+    status = status.concat(" txs")
   }
   
   if (balance == 0) {

@@ -61,6 +61,7 @@ function getStats(address) {
 
   const funded = stats.funded_txo_sum
   const spent = stats.spent_txo_sum
+  
   const balance = funded - spent
 
   return {
@@ -163,11 +164,6 @@ function getLegacyOrSegWitInfos(xpub) {
     const url = baseUrl.concat(offset)
     const res = helpers.getJson(url)
 
-    // retrieve the balance once
-    if (offset == 0) {
-      res.addresses.forEach(item => balance += item.final_balance)
-    }
-
     const txs = res.txs
 
     // no txs found: 
@@ -186,14 +182,59 @@ function getLegacyOrSegWitInfos(xpub) {
   }
 }
 
+// TODO: enhance the logic of this implementation
+// to take into account edge cases
+function getSent(knownAddressesGlobal, address) {
+  const res = helpers.getJson(blockstreamAPI + address + "/txs")
+
+  var sent = 0
+  var additionnalKnownAddresses = []
+  var knownAddresses = knownAddressesGlobal
+
+  res.forEach(tx => {
+    tx.vout.forEach(vout => {
+      const outAddress = vout.scriptpubkey_address
+      
+      if (!knownAddresses.includes(outAddress) && sent == 0) {
+        // sent to unknown address
+        sent = vout.value
+        additionnalKnownAddresses.push(outAddress)
+      }
+      else {
+        // remove instance of address existing in known addresses array
+        // (in case subsequent funds are sent to the same address)
+        knownAddresses = knownAddresses.filter(item => item !== outAddress)
+      }
+    })
+  })
+
+  return {
+    sent: sent,
+    addresses: additionnalKnownAddresses
+  }
+}
+
+// generate addresses associated with the xpub
+function generateKnownAddresses(addressType, xpub) {
+  var changeAddresses = []
+  for(var index = 0; index < 10000; ++index) {
+    changeAddresses.push(getAddress(addressType, xpub, 0, index))
+    changeAddresses.push(getAddress(addressType, xpub, 1, index))
+  }
+
+  return changeAddresses
+}
+
 // scan all active addresses
 function scanAddresses(addressType, xpub) {
   helpers.logStatus("Scanning ".concat(chalk.bold(addressType)).concat(" addresses..."))
 
+  var knownAddresses = generateKnownAddresses(addressType, xpub)
+
   var txs = []
   var totalBalance = 0
 
-  for(var account = 0; account < 10 ; ++account) {
+  for(var account = 0; account < 2 ; ++account) {
     helpers.logStatus("- scanning account " + account + " -")
 
     for(var index = 0; index < 1000; ++index) {
@@ -231,6 +272,15 @@ function scanAddresses(addressType, xpub) {
       // returned by blockchain.info API
       // totalBalance += currentBalance
 
+      // check sent transactions
+      var sentTX = {} 
+      if (spent_count > 0) {
+        sentTX = getSent(knownAddresses, address)
+        knownAddresses = knownAddresses.concat(sentTX.addresses)
+      }
+
+      const sent = sentTX.sent || 0
+
       var tx = {
         address: res.address,
         balance: sb.toBitcoin(currentBalance),
@@ -238,7 +288,8 @@ function scanAddresses(addressType, xpub) {
         funded_sum: sb.toBitcoin(funded_sum),
         spent_count: spent_count,
         spent_sum: sb.toBitcoin(spent_sum),
-        txs_count: txs_count
+        txs_count: txs_count,
+        sent: sb.toBitcoin(sent)
       }
       
       helpers.logProgress(addressType, account, index, tx)

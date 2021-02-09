@@ -23,7 +23,7 @@ function logProgress(addressType, account, index, item) {
   const address = item.address.padEnd(34, ' ')
   const fundedSum = String(item.funded_sum).padEnd(10, ' ')
   const spentSum = String(item.spent_sum).padEnd(10, ' ')
-  const progress = 
+  var progress = 
       chalk.italic(addressType.padEnd(16, ' '))
         .concat(derivationPath.padEnd(12, ' '))
         .concat(address.padEnd(46, ' '))
@@ -32,8 +32,12 @@ function logProgress(addressType, account, index, item) {
         .concat("\t-")
         .concat(spentSum).concat(" (").concat(item.spent_count).concat(") ") // spent tx
   
-    console.log("  ".concat(progress))
+  if (item.sent != undefined && item.sent > 0) {
+    progress = progress.concat("\t-").concat(item.sent).concat(" →")
   }
+      
+  console.log("  ".concat(progress))
+}
 
 function showSummary(addressType, value) {
   const balance = String(value.balance).padEnd(12, ' ')

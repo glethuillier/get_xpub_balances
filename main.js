@@ -164,6 +164,11 @@ function getLegacyOrSegWitInfos(xpub) {
     const url = baseUrl.concat(offset)
     const res = helpers.getJson(url)
 
+    // retrieve the balance once
+    if (offset == 0) {
+      res.addresses.forEach(item => balance += item.final_balance)
+    }
+
     const txs = res.txs
 
     // no txs found: 

@@ -18,24 +18,31 @@ function getJson(url) {
 
 
 function logProgress(addressType, account, index, tx) {
-  const derivationPath = String("m/" + account + "/" + index).padEnd(12, ' ')
-  const balance = String(tx.balance).padEnd(10, ' ')
+  const derivationPath = String("m/" + account + "/" + index)
+  var balance = String(tx.balance)
+
+  if (balance != 0) {
+    balance = chalk.greenBright(balance)
+  }
+
+  const address = tx.address.padEnd(34, ' ')
   const fundedSum = String(tx.funded_sum).padEnd(10, ' ')
   const spentSum = String(tx.spent_sum).padEnd(10, ' ')
   const progress = 
-      chalk.italic(addressType)
-        .concat("\t").concat(derivationPath)
-        .concat(tx.address).concat("\t")
-        .concat(balance.padEnd(10, ' ')).concat("\t") // total received
-        .concat("\t+").concat(fundedSum).concat(" (").concat(tx.funded_count).concat(") ") // funded tx
-        .concat("\t-").concat(spentSum).concat(" (").concat(tx.spent_count).concat(") ") // spent tx
+      chalk.italic(addressType.padEnd(16, ' '))
+        .concat(derivationPath.padEnd(12, ' '))
+        .concat(address.padEnd(46, ' '))
+        .concat(String(tx.balance).padEnd(16, ' '))
+        .concat("+" + fundedSum).concat(" (").concat(tx.funded_count).concat(") ") // funded tx
+        .concat("\t-")
+        .concat(spentSum).concat(" (").concat(tx.spent_count).concat(") ") // spent tx
   
     console.log("  ".concat(progress))
   }
 
 function logTotal(addressType, value) {
 
-  const balance = value.balance
+  const balance = String(value.balance).padEnd(12, ' ')
   const txs_count = value.txs_count
 
   const type = chalk.italic(addressType)
@@ -58,14 +65,16 @@ function logTotal(addressType, value) {
     status = status
       .concat("\t")
       .concat(txs_count)
+
+      if (txs_count < 2) {
+        status = status.concat(" tx")
+      }
+      else {
+        status = status.concat(" txs")
+      }
   }
 
-  if (txs_count < 2) {
-    status = status.concat(" tx")
-  }
-  else {
-    status = status.concat(" txs")
-  }
+  
   
   if (balance == 0) {
     console.log(chalk.grey(status))

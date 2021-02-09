@@ -33,7 +33,14 @@ function logProgress(addressType, account, index, item) {
         .concat(spentSum).concat(" (").concat(item.spent_count).concat(") ") // spent tx
   
   if (item.sent != undefined && item.sent > 0) {
-    progress = progress.concat("\t-").concat(item.sent).concat(" →")
+    progress = progress.concat("\t-").concat(item.sent)
+
+    if (item.sentToSelf == true) {
+      progress = progress.concat(" ↺")
+    }
+    else {
+      progress = progress.concat(" →")
+    }
   }
       
   console.log("  ".concat(progress))

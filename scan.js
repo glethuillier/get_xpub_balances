@@ -34,8 +34,9 @@ function getStats(address) {
 
   address.setBalance(balance);
   address.setStats({
-    funded_sum: sb.toBitcoin(funded),
-    spent_sum: sb.toBitcoin(spent)
+    funded: {
+      amount: sb.toBitcoin(funded)
+    },
   })
 
   helpers.displayAddress(address);
@@ -51,13 +52,14 @@ function updateSummary(summary, addressType, value) {
   }
   else {
     summary.get(addressType).totalBalance += value.totalBalance;
+    summary.get(addressType).addresses.concat(value.addresses);
   }
 }
 
-function getLegacyOrSegWitInfos(xpub) {
+function getLegacyOrSegWitStats(xpub) {
 
-  scanAddresses(AddressType.LEGACY, xpub);
-  scanAddresses(AddressType.SEGWIT, xpub);
+  const legacy = scanAddresses(AddressType.LEGACY, xpub);
+  const segwit = scanAddresses(AddressType.SEGWIT, xpub);
 
   helpers.logStatus("Fetching legacy/SegWit infos...\n");
 
@@ -92,17 +94,19 @@ function getLegacyOrSegWitInfos(xpub) {
   return {
     totalBalance: sb.toBitcoin(balance),
     txsCount: uniqueTxs.size,
+    addresses: legacy.addresses.concat(segwit.addresses)
   };
 }
 
 function getsentTx(ownAddresses, knownAddresses, address) {
-  const res = helpers.getJson(blockstreamAPI.concat(address.toString()).concat("/txs"));
+  const txs = helpers.getJson(blockstreamAPI.concat(address.toString()).concat("/txs"));
 
   var sentAmount = 0;
   var recipientAddresses = [];
   var outTxs = [];
+  var sentDate
 
-  res.forEach(tx => {
+  txs.forEach(tx => {
     tx.vout.forEach(vout => {
       outTxs.push(vout);
     })
@@ -111,40 +115,44 @@ function getsentTx(ownAddresses, knownAddresses, address) {
   // are all out addresses internal ones?
   const selfSent = outTxs.every(v => ownAddresses.includes(v.scriptpubkey_address));
 
-  if (selfSent) { 
-    // edge case: self-sent transaction
-    sentAmount = outTxs[0].value;
-  }
-  else { 
-    // common case: sent to external address
-    for (var i = 0; i < outTxs.length; ++i) {
-      const outAddress = outTxs[i].scriptpubkey_address;
+  for(var i = 0; i < txs.length; i++) {
+    if (selfSent) { 
+      // edge case: self-sent transaction
+      sentAmount = txs[0].vout[0].value; // TODO: rework
+      sentDate = txs[0].status.block_time;
+    }
+    else { 
+  
+      // common case: sent to external address
+      for (var j = 0; j < txs[i].vout.length; ++j) {
+        const vout = txs[i].vout[j];
+        const outAddress = vout.scriptpubkey_address;
 
-      // is it a known address?
-      const knownAddress = knownAddresses.includes(outAddress);
+        // is it a known address?
+        const knownAddress = knownAddresses.includes(outAddress);
 
-      if (!knownAddress) {
-        // sent to unknown address
-        sentAmount = outTxs[i].value;
-        recipientAddresses.push(outAddress);
-        break
-      }
-      else {
-        // remove one instance of known external address at a time
-        // to take into account subsequent funds sent to the same external address
-        knownAddresses = knownAddresses.filter(a => a !== outAddress);
+        if (!knownAddress) {
+          // sent to unknown address
+          sentAmount = vout.value;
+          recipientAddresses.push(outAddress);
+          sentDate = txs[i].status.block_time;
+          break
+        }
+        else {
+          // remove one instance of known external address at a time
+          // to take into account subsequent funds sent to the same external address
+          knownAddresses = knownAddresses.filter(a => a !== outAddress);
+        }
       }
     }
-  }
-
-  address.setSent(sb.toBitcoin(sentAmount), selfSent)
-
-  if (sentAmount > 0) {
-    helpers.displayAddress(address)
+    
   }
 
   return {
-    recipientAddresses: recipientAddresses
+    recipientAddresses: recipientAddresses,
+    amount: sb.toBitcoin(sentAmount),
+    self: selfSent,
+    date: sentDate // TODO
   };
 }
 
@@ -160,6 +168,25 @@ function generateOwnAddresses(addressType, xpub) {
   return changeAddresses;
 }
 
+function getDateTx(address, type) {
+  const res = helpers.getJson(blockstreamAPI + address.toString() + "/txs");
+
+  var fundedDate, sentDate;
+
+  res.forEach(tx => {
+    tx.vout.forEach(vout => {
+      if (vout.scriptpubkey_address == address.toString()) {
+        fundedDate = tx.status.block_time
+      }
+    })
+  })
+
+  return {
+    fundedDate: fundedDate,
+    sentDate: sentDate
+  }
+}
+
 // scan all active addresses
 function scanAddresses(addressType, xpub) {
   helpers.logStatus("Scanning ".concat(chalk.bold(addressType)).concat(" addresses..."));
@@ -169,6 +196,7 @@ function scanAddresses(addressType, xpub) {
   var txs = [];
   var totalBalance = 0;
   var noTxCounter = 0;
+  var addresses = []
 
   for(var account = 0; account < 2; ++account) {
     helpers.logStatus("- scanning account " + account + " -");
@@ -183,13 +211,16 @@ function scanAddresses(addressType, xpub) {
       const spent_count = res.chain_stats.spent_txo_count;
       const funded_sum = res.chain_stats.funded_txo_sum;
       const spent_sum = res.chain_stats.spent_txo_sum;
+      const currentBalance = funded_sum - spent_sum;
+      var funded_time = undefined
+      totalBalance += currentBalance;
 
       if (txsCount == 0) {
         noTxCounter++;
 
         process.stdout.clearLine();
         process.stdout.cursorTo(0);
-        process.stdout.write(chalk.yellow("  (probing m/" + account + "/" + index + ")"));
+        process.stdout.write(chalk.yellow("  (probing m/" + account + "/" + index + "...)"));
 
         if (noTxCounter >= MAX_EXPLORATION) {
           // if at account X index Y there is no transaction,
@@ -204,11 +235,17 @@ function scanAddresses(addressType, xpub) {
       }
       else {
         noTxCounter = 0;
+
+        // get date time
+        const res2 = helpers.getJson(blockstreamAPI + address.toString() + "/txs");
+        res2.forEach(tx => {
+          tx.vout.forEach(vout => {
+            if (vout.scriptpubkey_address == address.toString()) {
+              funded_time = tx.status.block_time
+            }
+          })
+        })
       }
-
-      const currentBalance = funded_sum - spent_sum;
-
-      totalBalance += currentBalance;
 
       // check sent transactions
       var sentTx = {} 
@@ -220,40 +257,52 @@ function scanAddresses(addressType, xpub) {
       address.setBalance(sb.toBitcoin(currentBalance));
 
       var tx = {
-        funded_count: funded_count,
-        funded_sum: sb.toBitcoin(funded_sum),
-        spent_count: spent_count,
-        spent_sum: sb.toBitcoin(spent_sum),
-        txsCount: txsCount,
+        funded: {
+          count: funded_count,
+          amount: sb.toBitcoin(funded_sum),
+          date: getDateTx(address, 'funded').fundedDate
+        },
+        sent: {
+          amount: sentTx.amount,
+          self: sentTx.self,
+          date: sentTx.date
+        },
+        txsCount: txsCount
       };
 
-      address.setStats(tx)
+      address.setStats(tx);
       
       helpers.displayAddress(address);
 
+      addresses.push(address)
+
       //txs.push(tx);
+      
     }
   }
 
   helpers.logStatus(addressType.concat(" addresses scanned\n"));
 
   return {
-    totalBalance: totalBalance,
-    // TODO: return also txsCount
+    totalBalance: sb.toBitcoin(totalBalance),
+    addresses: addresses
   }
 }
 
 let summary = new Map();
 
 if (typeof(index) === 'undefined') {
+  console.log(chalk.bold("\nActive addresses"))
   // Option A: no index has been provided:
   //  - retrieve stats for legacy/SegWit
   //  - scan Native SegWit addresses
-  const legacyOrSegwit = getLegacyOrSegWitInfos(xpub);
+  const legacyOrSegwit = getLegacyOrSegWitStats(xpub);
   updateSummary(summary, AddressType.LEGACY_OR_SEGWIT, legacyOrSegwit);
 
   const nativeSegwit = scanAddresses(AddressType.NATIVE, xpub);
   updateSummary(summary, AddressType.NATIVE, nativeSegwit);
+
+  helpers.displaySortedAddresses(legacyOrSegwit.addresses.concat(nativeSegwit.addresses)) // TODO: varargs
 }
 else {
   // Option B: an index has been provided:

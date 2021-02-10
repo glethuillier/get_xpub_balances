@@ -8,6 +8,8 @@ const blockchainAPI = 'https://blockchain.info/multiaddr?active=';
 // (less rate limited than the blockchain.info one)
 const blockstreamAPI = 'https://blockstream.info/api/address/';
 
+// max number of addresses to probe when checking a possible gap between derivation indices
+// (that is: range of indices not used for derivation)
 const MAX_EXPLORATION = 20;
 
 module.exports = { AddressType, blockchainAPI, blockstreamAPI, MAX_EXPLORATION }

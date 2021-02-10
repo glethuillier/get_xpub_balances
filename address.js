@@ -15,13 +15,13 @@ class Address {
         this.balance = balance;
     }
   
-    setStats(Stats) {
-      this.Stats = Stats;
+    setStats(stats) {
+      this.stats = stats;
     }
   
     setSent(amount, self) {
-      this.sentAmount = amount;
-      this.selfSent = self;
+      this.sent.amount = amount;
+      this.sent.self = self;
     }
   
     toString() {
@@ -44,14 +44,7 @@ class Address {
     }
   
     getStats() {
-      return this.Stats
-    }
-  
-    getSent() {
-      return {
-        amount: this.sentAmount,
-        self: this.selfSent
-      }
+      return this.stats
     }
   }
 

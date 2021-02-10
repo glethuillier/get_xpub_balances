@@ -24,6 +24,7 @@ function displayAddress(address) {
   const index = address.getDerivation().index
 
   const derivationPath = String("m/".concat(account).concat("/").concat(index));
+  const addressStats = address.getStats()
 
   // _type_  path  address ...
   var stats = 
@@ -31,10 +32,11 @@ function displayAddress(address) {
       .concat(derivationPath.padEnd(12, ' '))
       .concat(address.toString().padEnd(46, ' '))
 
+  // show balance
   if (typeof(address.getBalance()) !== 'undefined') {
     // option 1: display balance and txs stats
     const balance = String(address.getBalance())
-    const fundedSum = String(address.getStats().funded_sum).padEnd(10, ' ');
+    const fundedSum = String(address.getStats().funded.amount).padEnd(10, ' ');
     //const spentSum = String(address.getStats().spent_sum).padEnd(10, ' ');
 
     stats = 
@@ -44,14 +46,16 @@ function displayAddress(address) {
         //.concat(spentSum).concat(" (").concat(address.getStats().spent_count).concat(") "); // spent tx
         .concat("\t\t" + balance)
   }
-  else if (typeof(address.getSent()) !== 'undefined' && address.getSent().amount > 0) {
+
+  // stats
+  if (typeof(addressStats) !== 'undefined' && typeof(addressStats.sent.amount) !== 'undefined' && addressStats.sent.amount > 0) {
     // option 2: display sent amount
     stats =
       stats
-        .concat("-")
-        .concat(String(address.getSent().amount).padEnd(10, ' '))
+        .concat("\t\t-")
+        .concat(String(addressStats.sent.amount).padEnd(10, ' '))
       
-    if (address.getSent().self) {
+    if (addressStats.sent.self) {
       stats = stats.concat(" ↺");
     }
     else {
@@ -62,7 +66,49 @@ function displayAddress(address) {
   console.log("  ".concat(stats))
 }
 
-function showSummary(addressType, value) {
+function displaySortedAddresses(addresses) {
+  console.log(chalk.bold("\nSorted Addresses"));
+
+  var dates = []
+
+  addresses.forEach(address => {
+    const fundedDate = address.stats.funded.date
+    if (fundedDate != undefined) {
+      dates.push(
+        {
+          address: address,
+          date: fundedDate,
+          type: 'funded'
+        }
+      )
+    }
+
+    const sentDate = address.stats.sent.date
+    if (sentDate != undefined) {
+      dates.push(
+        {
+          address: address,
+          date: sentDate,
+          type: 'sent'
+        }
+      )
+    }
+  })
+
+
+  dates = dates.sort(function(a, b) {
+    return b.date - a.date;
+  });
+
+
+  dates.forEach(item => {
+    displayAddress(item.address);
+  })
+
+  //console.log(dates);
+}
+
+function showSummary(addressType, value) {  
   const balance = String(value.totalBalance).padEnd(12, ' ');
   const txsCount = value.txsCount;
 
@@ -98,4 +144,4 @@ function logStatus(status) {
   console.log(chalk.dim(status));
 }
 
-module.exports = { getJson, showSummary, logStatus, displayAddress }
+module.exports = { getJson, showSummary, logStatus, displayAddress, displaySortedAddresses }

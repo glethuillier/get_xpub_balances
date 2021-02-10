@@ -1,6 +1,8 @@
 const request = require('sync-request');
 const chalk = require('chalk');
 
+const { AddressType } = require('./settings');
+
 function getJson(url) {
     const res = request('GET', url);
   
@@ -16,62 +18,67 @@ function getJson(url) {
     return JSON.parse(res.getBody('utf-8'));
   }
 
+function displayAddress(address) {
+  const addressType = address.getType()
+  const account = address.getDerivation().account
+  const index = address.getDerivation().index
 
-function logProgress(addressType, account, index, item) {
-  const derivationPath = String("m/" + account + "/" + index);
-  var balance = String(item.balance);
-  const address = item.address.padEnd(34, ' ');
-  const fundedSum = String(item.funded_sum).padEnd(10, ' ');
-  const spentSum = String(item.spent_sum).padEnd(10, ' ');
-  var progress = 
-      chalk.italic(addressType.padEnd(16, ' '))
-        .concat(derivationPath.padEnd(12, ' '))
-        .concat(address.padEnd(46, ' '))
-        .concat(balance.padEnd(16, ' '))
-        .concat("+" + fundedSum).concat(" (").concat(item.funded_count).concat(") ") // funded tx
-        .concat("\t-")
-        .concat(spentSum).concat(" (").concat(item.spent_count).concat(") "); // spent tx
-  
-  if (item.sent != undefined && item.sent > 0) {
-    progress = progress.concat("\t-").concat(item.sent);
+  const derivationPath = String("m/".concat(account).concat("/").concat(index));
 
-    if (item.sentToSelf) {
-      progress = progress.concat(" ↺");
+  // _type_  path  address ...
+  var stats = 
+    chalk.italic(addressType.padEnd(16, ' '))
+      .concat(derivationPath.padEnd(12, ' '))
+      .concat(address.toString().padEnd(46, ' '))
+
+  if (typeof(address.getBalance()) !== 'undefined') {
+    // option 1: display balance and txs stats
+    const balance = String(address.getBalance())
+    const fundedSum = String(address.getStats().funded_sum).padEnd(10, ' ');
+    //const spentSum = String(address.getStats().spent_sum).padEnd(10, ' ');
+
+    stats = 
+      stats
+        .concat("+" + fundedSum.padEnd(10, ' ')).concat(" ←") // funded tx
+        //.concat("\t-")
+        //.concat(spentSum).concat(" (").concat(address.getStats().spent_count).concat(") "); // spent tx
+        .concat("\t\t" + balance)
+  }
+  else if (typeof(address.getSent()) !== 'undefined' && address.getSent().amount > 0) {
+    // option 2: display sent amount
+    stats =
+      stats
+        .concat("-")
+        .concat(String(address.getSent().amount).padEnd(10, ' '))
+      
+    if (address.getSent().self) {
+      stats = stats.concat(" ↺");
     }
     else {
-      progress = progress.concat(" →");
+      stats = stats.concat(" →");
     }
   }
-      
-  console.log("  ".concat(progress));
+
+  console.log("  ".concat(stats))
 }
 
 function showSummary(addressType, value) {
-  const balance = String(value.balance).padEnd(12, ' ');
-  const txs_count = value.txs_count;
+  const balance = String(value.totalBalance).padEnd(12, ' ');
+  const txsCount = value.txsCount;
 
   const type = chalk.italic(addressType);
-
-  if (Object.keys(value).length === 0) {
-    var status = 
-    type
-      .concat("\t(skipped)");
-
-    console.log(chalk.grey(status));
-    return;
-  }
 
   var status = 
     type
       .concat("\t")
       .concat(balance);
 
-  if (typeof(txs_count) !== 'undefined') {
+  if (typeof(txsCount) !== 'undefined') {
     status = status
       .concat("\t")
-      .concat(txs_count);
+      .concat(txsCount);
 
-      if (txs_count < 2) {
+      if (txsCount < 2) {
         status = status.concat(" tx");
       }
       else {
@@ -91,4 +98,4 @@ function logStatus(status) {
   console.log(chalk.dim(status));
 }
 
-module.exports = { getJson, logProgress, logTotal: showSummary, logStatus }
+module.exports = { getJson, showSummary, logStatus, displayAddress }

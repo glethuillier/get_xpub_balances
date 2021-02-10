@@ -1,8 +1,9 @@
-const bjs = require('bitcoinjs-lib');
-const bip32 = require('bip32');
 const sb = require('satoshi-bitcoin');
 const chalk = require('chalk');
+
 const helpers = require('./helpers');
+const { Address, getAddress, checkXpub } = require('./address');
+const { AddressType, blockchainAPI, blockstreamAPI, MAX_EXPLORATION } = require('./settings');
 
 // Option 1: one arg -> xpub
 var args = process.argv.slice(2);
@@ -21,39 +22,9 @@ if (typeof args[2] !== 'undefined') {
   index = parseInt(args[2]);
 }
 
-// blockchain.info API to retrieve the number of txs for a legacy or SegWit xpub
-const blockchainAPI = 'https://blockchain.info/multiaddr?active=';
-
-// blockstream API to retrieve stats related to a given address
-// (less rate limited than the blockchain.info one)
-const blockstreamAPI = 'https://blockstream.info/api/address/';
-
-const AddressType = { LEGACY: "legacy", NATIVE: "native", SEGWIT: "SegWit", LEGACY_OR_SEGWIT: "legacy/SegWit" };
-Object.freeze(AddressType);
-
-// infer address type from its syntax
-function getAddressType(address) {
-  if (address.startsWith('bc1')) {
-    return AddressType.NATIVE;
-  }
-  else if (address.startsWith('3')) {
-    return AddressType.SEGWIT;
-  }
-  else if (address.startsWith('1')) {
-    return AddressType.LEGACY;
-  }
-  else {
-    throw new Error(
-      "INVALID ADDRESS: "
-        .concat(address)
-        .concat(" is not a valid address")
-      );
-  }
-}
-
 // get stats (balance, txs sum and count) for an address
 function getStats(address) {
-  const res = helpers.getJson(blockstreamAPI + address);
+  const res = helpers.getJson(blockstreamAPI + address.toString());
   const stats = res.chain_stats;
 
   const funded = stats.funded_txo_sum;
@@ -61,73 +32,17 @@ function getStats(address) {
   
   const balance = funded - spent;
 
-  return {
-    address: res.address,
-    balance: sb.toBitcoin(balance),
-    funded_count: stats.funded_txo_count,
+  address.setBalance(balance);
+  address.setStats({
     funded_sum: sb.toBitcoin(funded),
-    spent_count: stats.spent_txo_count,
     spent_sum: sb.toBitcoin(spent)
+  })
+
+  helpers.displayAddress(address);
+
+  return {
+    totalBalance: sb.toBitcoin(balance)
   };
-}
-
-// ensure that the xpub is a valid one
-function checkXpub(xpub) {
-  try {
-    bip32.fromBase58(xpub);
-  }
-  catch (e) {
-    throw new Error("INVALID XPUB: ".concat(xpub).concat(" is not a valid xpub"));
-  }
-}
-
-// derive legacy address at account and index positions
-function getLegacyAddress(xpub, account, index) {
-  const { address } = bjs.payments.p2pkh({
-    pubkey: bip32
-      .fromBase58(xpub)
-      .derive(account)
-      .derive(index).publicKey,
-  });
-
-  return address;
-}
-
-// derive native SegWit at account and index positions
-function getNativeSegWitAddress(xpub, account, index) {
-  const { address } = bjs.payments.p2wpkh({
-      pubkey: bip32
-        .fromBase58(xpub)
-        .derive(account)
-        .derive(index).publicKey,
-  });
-
-  return address;
-}
-
-// derive SegWit at account and index positions
-function getSegWitAddress(xpub, account, index) {
-  const { address } = bjs.payments.p2sh({
-    redeem: bjs.payments.p2wpkh({
-      pubkey: bip32
-        .fromBase58(xpub)
-        .derive(account)
-        .derive(index).publicKey,
-    }),
-  });
-
-  return address;
-}
-
-function getAddress(addressType, xpub, account, index) {
-  switch(addressType) {
-    case AddressType.LEGACY:
-      return getLegacyAddress(xpub, account, index);
-    case AddressType.SEGWIT:
-      return getSegWitAddress(xpub, account, index);
-    case AddressType.NATIVE:
-      return getNativeSegWitAddress(xpub, account, index);
-  }
 }
 
 function updateSummary(summary, addressType, value) {
@@ -135,7 +50,7 @@ function updateSummary(summary, addressType, value) {
     summary.set(addressType, value);
   }
   else {
-    summary.get(addressType).balance += value.balance;
+    summary.get(addressType).totalBalance += value.totalBalance;
   }
 }
 
@@ -175,14 +90,13 @@ function getLegacyOrSegWitInfos(xpub) {
   }
 
   return {
-    balance: sb.toBitcoin(balance),
-    txs_count: uniqueTxs.size,
-    txs: uniqueTxs
+    totalBalance: sb.toBitcoin(balance),
+    txsCount: uniqueTxs.size,
   };
 }
 
-function getSentTx(ownAddresses, knownAddresses, address) {
-  const res = helpers.getJson(blockstreamAPI.concat(address).concat("/txs"));
+function getsentTx(ownAddresses, knownAddresses, address) {
+  const res = helpers.getJson(blockstreamAPI.concat(address.toString()).concat("/txs"));
 
   var sentAmount = 0;
   var recipientAddresses = [];
@@ -195,9 +109,9 @@ function getSentTx(ownAddresses, knownAddresses, address) {
   })
 
   // are all out addresses internal ones?
-  const sentToSelf = outTxs.every(v => ownAddresses.includes(v.scriptpubkey_address));
+  const selfSent = outTxs.every(v => ownAddresses.includes(v.scriptpubkey_address));
 
-  if (sentToSelf) { 
+  if (selfSent) { 
     // edge case: self-sent transaction
     sentAmount = outTxs[0].value;
   }
@@ -223,10 +137,14 @@ function getSentTx(ownAddresses, knownAddresses, address) {
     }
   }
 
+  address.setSent(sb.toBitcoin(sentAmount), selfSent)
+
+  if (sentAmount > 0) {
+    helpers.displayAddress(address)
+  }
+
   return {
-    sent: sentAmount,
-    sentToSelf: sentToSelf,
-    addresses: recipientAddresses
+    recipientAddresses: recipientAddresses
   };
 }
 
@@ -250,26 +168,42 @@ function scanAddresses(addressType, xpub) {
   var knownAddresses = ownAddresses;
   var txs = [];
   var totalBalance = 0;
+  var noTxCounter = 0;
 
   for(var account = 0; account < 2; ++account) {
     helpers.logStatus("- scanning account " + account + " -");
 
     for(var index = 0; index < 1000; ++index) {
-      const address = getAddress(addressType, xpub, account, index);
-      const res = helpers.getJson(blockstreamAPI + address);
+      const address = new Address(addressType, xpub, account, index)
+      const res = helpers.getJson(blockstreamAPI + address.toString());
 
-      const txs_count = res.chain_stats.tx_count;
+      const txsCount = res.chain_stats.tx_count;
       //const total_received = res.chain_stats.funded_txo_sum;
       const funded_count = res.chain_stats.funded_txo_count;
       const spent_count = res.chain_stats.spent_txo_count;
       const funded_sum = res.chain_stats.funded_txo_sum;
       const spent_sum = res.chain_stats.spent_txo_sum;
 
-      if (txs_count == 0) {
-        // if at account X index Y there is no transaction,
-        // all active addresses for account X have been explored: break
-        helpers.logStatus("- account " + account + " fully scanned -");
-        break;
+      if (txsCount == 0) {
+        noTxCounter++;
+
+        process.stdout.clearLine();
+        process.stdout.cursorTo(0);
+        process.stdout.write(chalk.yellow("  (probing m/" + account + "/" + index + ")"));
+
+        if (noTxCounter >= MAX_EXPLORATION) {
+          // if at account X index Y there is no transaction,
+          // all active addresses for account X have been explored: break
+          process.stdout.clearLine();
+          process.stdout.cursorTo(0);
+          helpers.logStatus("- account " + account + " fully scanned -");
+          break;
+        }
+
+        continue;
+      }
+      else {
+        noTxCounter = 0;
       }
 
       const currentBalance = funded_sum - spent_sum;
@@ -277,74 +211,68 @@ function scanAddresses(addressType, xpub) {
       totalBalance += currentBalance;
 
       // check sent transactions
-      var sentTX = {} 
+      var sentTx = {} 
       if (spent_count > 0) {
-        sentTX = getSentTx(ownAddresses, knownAddresses, address);
-        knownAddresses = knownAddresses.concat(sentTX.addresses);
+        sentTx = getsentTx(ownAddresses, knownAddresses, address);
+        knownAddresses = knownAddresses.concat(sentTx.recipientAddresses);
       }
 
-      const sent = sentTX.sent || 0;
+      address.setBalance(sb.toBitcoin(currentBalance));
 
       var tx = {
-        address: res.address,
-        balance: sb.toBitcoin(currentBalance),
         funded_count: funded_count,
         funded_sum: sb.toBitcoin(funded_sum),
         spent_count: spent_count,
         spent_sum: sb.toBitcoin(spent_sum),
-        txs_count: txs_count,
-        sent: sb.toBitcoin(sent),
-        sentToSelf: sentTX.sentToSelf
+        txsCount: txsCount,
       };
-      
-      helpers.logProgress(addressType, account, index, tx);
 
-      txs.push(tx);
+      address.setStats(tx)
+      
+      helpers.displayAddress(address);
+
+      //txs.push(tx);
     }
   }
 
   helpers.logStatus(addressType.concat(" addresses scanned\n"));
 
   return {
-    balance: sb.toBitcoin(totalBalance),
-    txs_count: txs.size,
-    txs: txs
-  };
+    totalBalance: totalBalance,
+    // TODO: return also txsCount
+  }
 }
 
-let infos = new Map();
+let summary = new Map();
 
 if (typeof(index) === 'undefined') {
   // Option A: no index has been provided:
   //  - retrieve stats for legacy/SegWit
   //  - scan Native SegWit addresses
   const legacyOrSegwit = getLegacyOrSegWitInfos(xpub);
-  updateSummary(infos, AddressType.LEGACY_OR_SEGWIT, legacyOrSegwit);
+  updateSummary(summary, AddressType.LEGACY_OR_SEGWIT, legacyOrSegwit);
 
   const nativeSegwit = scanAddresses(AddressType.NATIVE, xpub);
-  updateSummary(infos, AddressType.NATIVE, nativeSegwit);
+  updateSummary(summary, AddressType.NATIVE, nativeSegwit);
 }
 else {
   // Option B: an index has been provided:
   // derive all addresses at that account and index; then
   // check their respective balances
   [
-    getLegacyAddress(xpub, account, index), 
-    getSegWitAddress(xpub, account, index), 
-    getNativeSegWitAddress(xpub, account, index)
-  ].forEach(address => {
-
+    AddressType.LEGACY,
+    AddressType.SEGWIT,
+    AddressType.NATIVE
+  ].forEach(addressType => {
+    const address = new Address(addressType, xpub, account, index);
     const balance = getStats(address);
-    const addressType = getAddressType(address);
 
-    helpers.logProgress(addressType, account, index, balance);
-    updateSummary(infos, addressType, balance);
-
+    updateSummary(summary, addressType, balance);
   })
 }
 
 console.log(chalk.bold("\nSummary"));
 
-for (var [addressType, value] of infos.entries()) {
-  helpers.logTotal(addressType, value);
+for (var [addressType, value] of summary.entries()) {
+  helpers.showSummary(addressType, value);
 }

@@ -32,19 +32,21 @@ function displayAddress(address) {
       .concat(derivationPath.padEnd(12, ' '))
       .concat(address.toString().padEnd(46, ' '))
 
-  // show balance
-  if (typeof(address.getBalance()) !== 'undefined') {
-    // option 1: display balance and txs stats
-    const balance = String(address.getBalance())
-    const fundedSum = String(address.getStats().funded.amount).padEnd(10, ' ');
-    //const spentSum = String(address.getStats().spent_sum).padEnd(10, ' ');
+    // show balance
+    if (typeof(address.getBalance()) !== 'undefined') {
+      // option 1: display balance and txs stats
+      const balance = String(address.getBalance()).padEnd(16, ' ');
+      
+      //const spentSum = String(address.getStats().spent_sum).padEnd(10, ' ');
+    
 
-    stats = 
-      stats
-        .concat("+" + fundedSum.padEnd(10, ' ')).concat(" ←") // funded tx
-        //.concat("\t-")
-        //.concat(spentSum).concat(" (").concat(address.getStats().spent_count).concat(") "); // spent tx
-        .concat("\t\t" + balance)
+      const fundedSum = String(address.getStats().funded.amount).padEnd(10, ' ');
+      stats = 
+          stats
+            .concat(balance)
+            .concat("+" + fundedSum).concat(" ←") // funded tx
+            //.concat("\t-")
+            //.concat(spentSum).concat(" (").concat(address.getStats().spent_count).concat(") "); // spent tx
   }
 
   // stats
@@ -52,7 +54,7 @@ function displayAddress(address) {
     // option 2: display sent amount
     stats =
       stats
-        .concat("\t\t-")
+        .concat("\t-")
         .concat(String(addressStats.sent.amount).padEnd(10, ' '))
       
     if (addressStats.sent.self) {
@@ -72,22 +74,23 @@ function displaySortedAddresses(addresses) {
   var dates = []
 
   addresses.forEach(address => {
-    const fundedDate = address.stats.funded.date
-    if (fundedDate != undefined) {
+    address.stats.funded.txs.forEach(tx => {
       dates.push(
         {
           address: address,
-          date: fundedDate,
+          amount: tx.amount,
+          date: tx.date,
           type: 'funded'
         }
       )
-    }
+    })
 
     const sentDate = address.stats.sent.date
     if (sentDate != undefined) {
       dates.push(
         {
           address: address,
+          amount: -1 * (address.stats.sent.amount),
           date: sentDate,
           type: 'sent'
         }
@@ -95,17 +98,33 @@ function displaySortedAddresses(addresses) {
     }
   })
 
+  // handle amounts in same block
+
+
 
   dates = dates.sort(function(a, b) {
     return b.date - a.date;
   });
 
-
   dates.forEach(item => {
-    displayAddress(item.address);
-  })
+    const amount = item.amount;
 
-  //console.log(dates);
+    status = 
+      chalk.grey(item.date)
+      .concat("\t")
+      .concat(item.address.toString())
+      .concat("\t")
+      .concat(String(amount).padEnd(10, ' '))
+
+    if (amount >= 0) {
+      status = status.concat(" ←");
+    }
+    else {
+      status = status.concat(" →");
+    }
+
+    console.log(status);
+  })
 }
 
 function showSummary(addressType, value) {  

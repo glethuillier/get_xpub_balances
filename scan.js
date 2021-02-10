@@ -98,6 +98,26 @@ function getLegacyOrSegWitStats(xpub) {
   };
 }
 
+function getFundedTx(address) {
+  const txs = helpers.getJson(blockstreamAPI.concat(address.toString()).concat("/txs"));
+  var outTxs = [];
+
+  txs.forEach(tx => {
+    tx.vout.forEach(vout => {
+      if (vout.scriptpubkey_address == address.toString()) {
+        outTxs.push({
+          amount: sb.toBitcoin(vout.value), 
+          date: tx.status.block_time
+        });
+      }
+    })
+  })
+
+  return outTxs;
+
+  // console.log(outTxs);
+}
+
 function getsentTx(ownAddresses, knownAddresses, address) {
   const txs = helpers.getJson(blockstreamAPI.concat(address.toString()).concat("/txs"));
 
@@ -105,6 +125,7 @@ function getsentTx(ownAddresses, knownAddresses, address) {
   var recipientAddresses = [];
   var outTxs = [];
   var sentDate
+  var lookup = true;
 
   txs.forEach(tx => {
     tx.vout.forEach(vout => {
@@ -115,17 +136,20 @@ function getsentTx(ownAddresses, knownAddresses, address) {
   // are all out addresses internal ones?
   const selfSent = outTxs.every(v => ownAddresses.includes(v.scriptpubkey_address));
 
-  for(var i = 0; i < txs.length; i++) {
+  for(var i = 0; i < txs.length && lookup; i++) {
+    const tx = txs[i];
+
     if (selfSent) { 
       // edge case: self-sent transaction
       sentAmount = txs[0].vout[0].value; // TODO: rework
       sentDate = txs[0].status.block_time;
+      lookup = false;
+      break;
     }
     else { 
-  
       // common case: sent to external address
-      for (var j = 0; j < txs[i].vout.length; ++j) {
-        const vout = txs[i].vout[j];
+      for (var j = 0; j < txs[i].vout.length && lookup; ++j) {
+        const vout = tx.vout[j];
         const outAddress = vout.scriptpubkey_address;
 
         // is it a known address?
@@ -135,8 +159,9 @@ function getsentTx(ownAddresses, knownAddresses, address) {
           // sent to unknown address
           sentAmount = vout.value;
           recipientAddresses.push(outAddress);
-          sentDate = txs[i].status.block_time;
-          break
+          sentDate = tx.status.block_time;
+          lookup = false;
+          break;
         }
         else {
           // remove one instance of known external address at a time
@@ -152,7 +177,7 @@ function getsentTx(ownAddresses, knownAddresses, address) {
     recipientAddresses: recipientAddresses,
     amount: sb.toBitcoin(sentAmount),
     self: selfSent,
-    date: sentDate // TODO
+    date: sentDate
   };
 }
 
@@ -247,6 +272,14 @@ function scanAddresses(addressType, xpub) {
         })
       }
 
+      // check funded transactions
+      var fundedTx = []
+
+      // TODO: ensure that we do no take into consideration account == 1
+      if (funded_count > 0 && address.getDerivation().account == 0) {
+        fundedTx = getFundedTx(address);
+      }
+
       // check sent transactions
       var sentTx = {} 
       if (spent_count > 0) {
@@ -260,7 +293,7 @@ function scanAddresses(addressType, xpub) {
         funded: {
           count: funded_count,
           amount: sb.toBitcoin(funded_sum),
-          date: getDateTx(address, 'funded').fundedDate
+          txs: fundedTx
         },
         sent: {
           amount: sentTx.amount,

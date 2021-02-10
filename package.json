@@ -2,9 +2,9 @@
   "name": "get_xpub_balances",
   "version": "1.0.0",
   "description": "Check addresses balances from xpub (supported: legacy, native segwit, segwit)",
-  "main": "main.js",
+  "main": "scan.js",
   "scripts": {
-    "start": "node main.js"
+    "start": "node scan.js"
   },
   "repository": {
     "type": "git",

@@ -12,15 +12,15 @@ From an xpub, get the balances of Bitcoin legacy, native SegWit, and SegWit acco
 
 ### Scan for a specific account and an index
 
-`$ node main.js <xpub> <account> <index>`
+`$ node scan.js <xpub> <account> <index>`
 
-(Example: `$ node main.js xpub6C...44dXs7p 0 10` [addresses at account `0`, index `10`])
+(Example: `$ node scan.js xpub6C...44dXs7p 0 10` [addresses at account `0`, index `10`])
 
 ### Scan all active addresses
 
-`$ node main.js <xpub>`
+`$ node scan.js <xpub>`
 
-(Example: `$ node main.js xpub6C...44dXs7p`)
+(Example: `$ node scan.js xpub6C...44dXs7p`)
 
 ## Output
 

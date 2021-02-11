@@ -32,6 +32,14 @@ _This is a slow process: please be patient_
 Example: 
 `$ node scan.js xpub6C...44dXs7p`
 
+### Docker
+
+Build
+`$ docker build -t xpubscan .`
+
+Run
+`$ docker run xpubscan <xpub>`
+
 ## Output
 
 All relevant derived addresses are displayed with the corresponding balance _in bitcoins_. 

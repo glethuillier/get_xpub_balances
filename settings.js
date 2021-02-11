@@ -9,6 +9,9 @@ const blockstreamAPI = 'https://blockstream.info/api/address/';
 // (that is: range of indices not used for derivation)
 const MAX_EXPLORATION = 20;
 
+// number of addresses to pre-generate (used for transactions analysis)
+const ADDRESSES_PREGENERATION = 2000;
+
 const VERBOSE = false;
 
-module.exports = { AddressType, blockstreamAPI, MAX_EXPLORATION, VERBOSE }
+module.exports = { AddressType, blockstreamAPI, MAX_EXPLORATION, VERBOSE, ADDRESSES_PREGENERATION }

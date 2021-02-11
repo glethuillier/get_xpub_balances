@@ -2,7 +2,7 @@ const chalk = require('chalk');
 
 const helpers = require('./helpers');
 const { Address, getAddress, checkXpub } = require('./address');
-const { AddressType, blockstreamAPI, MAX_EXPLORATION } = require('./settings');
+const { AddressType, blockstreamAPI, MAX_EXPLORATION, ADDRESSES_PREGENERATION } = require('./settings');
 const { getTransactions } = require('./transactions')
 
 // Option 1: one arg -> xpub
@@ -25,6 +25,8 @@ if (typeof args[2] !== 'undefined') {
 
 // generate addresses associated with the xpub
 function generateOwnAddresses(xpub) {
+  helpers.transientLine(chalk.grey("pre-generating addresses..."));
+
   var external = [], internal = [];
 
   [
@@ -33,11 +35,13 @@ function generateOwnAddresses(xpub) {
       AddressType.NATIVE
   ]
   .forEach(addressType => {
-      for(var index = 0; index < 10000; ++index) {
+      for(var index = 0; index < ADDRESSES_PREGENERATION; ++index) {
           external.push(getAddress(addressType, xpub, 0, index));
           internal.push(getAddress(addressType, xpub, 1, index));
       }
   });
+
+  helpers.transientLine(/* delete line about addresses pre-generation */);
 
   return {
     external: external,
@@ -106,6 +110,7 @@ function scanAddresses(addressType, xpub) {
 
     for(var index = 0; index < 1000; ++index) {
       const address = new Address(addressType, xpub, account, index)
+      helpers.displayAddress(address);
 
       getStats(address);
 
@@ -113,15 +118,13 @@ function scanAddresses(addressType, xpub) {
 
       if (addressStats.txs_count == 0) {
         noTxCounter++;
+        helpers.transientLine(/* delete address */);
 
-        process.stdout.clearLine();
-        process.stdout.cursorTo(0);
-        process.stdout.write(chalk.yellow("  (probing m/" + account + "/" + index + "...)"));
+        helpers.transientLine(chalk.yellow("  (probing m/" + account + "/" + index + "...)"));
 
         if (account == 1 || noTxCounter >= MAX_EXPLORATION) {
           // TODO: extend logic to account numbers > 1
-          process.stdout.clearLine();
-          process.stdout.cursorTo(0);
+          helpers.transientLine(/* delete last probing info */);
           helpers.logStatus("- " + chalk.italic(typeAccount) + " addresses scanned -");
           break;
         }

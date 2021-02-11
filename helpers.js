@@ -1,24 +1,52 @@
 const request = require('sync-request');
 const chalk = require('chalk');
 const sb = require('satoshi-bitcoin');
+var readline = require('readline');
 
 const { AddressType } = require('./settings');
 const { getSortedTransactions } = require('./transactions')
 
-function getJson(url) {
-    const res = request('GET', url);
-  
-    if (res.statusCode != 200) {
-      throw new Error(
-        "GET REQUEST ERROR: "
-          .concat(url)
-          .concat(", Status Code: ")
-          .concat(res.statusCode)
-        );
-    }
-  
-    return JSON.parse(res.getBody('utf-8'));
+// overwrite last displayed line
+// (no message: delete the line)
+function transientLine(message) {
+  readline.cursorTo(process.stdout, 0);
+
+  if (typeof(message) !== 'undefined') {
+    process.stdout.write(message);
   }
+  else {
+    // blank line
+    process.stdout.write("".padEnd(200, ' '));
+    readline.cursorTo(process.stdout, 0);
+  }
+}
+
+function getJson(url, attempts = 0) {
+  
+  if (attempts > 5) {
+    throw new Error(
+      "GET REQUEST ERROR: "
+        .concat(url)
+        .concat(", Status Code: ")
+        .concat(res.statusCode)
+      );
+  }
+
+  const res = request('GET', url);
+  
+  if (res.statusCode != 200) {
+    transientLine(chalk.red("NETWORK ERROR, attempt #" + attempts));
+    setTimeout(function() {
+      getJson(url, attempts++);
+    }, 1000)
+  }
+
+  if (attempts > 0) {
+    temporarilyDisplay(/* delete last error message */);
+  }
+  
+  return JSON.parse(res.getBody('utf-8'));
+}
 
 function displayAddress(address) {
   const addressType = address.getType()
@@ -28,16 +56,29 @@ function displayAddress(address) {
   const derivationPath = String("m/".concat(account).concat("/").concat(index));
   const addressStats = address.getStats();
 
-  const balance = String(sb.toBitcoin(address.getBalance()));
-  const fundedSum = String(sb.toBitcoin(addressStats.funded.sum));
-
+  
   // _type_  path  address ...
+
   var stats = 
-    chalk.italic(addressType.padEnd(16, ' '))
+    chalk.italic("  " + addressType.padEnd(16, ' '))
       .concat(derivationPath.padEnd(12, ' '))
       .concat(address.toString().padEnd(46, ' '))
-      .concat(balance.padEnd(16, ' '))
-      .concat("+").concat(fundedSum.padEnd(10, ' ')).concat(" ←")
+
+  if (address.getStats() == undefined) {
+    process.stdout.write(stats + chalk.yellow("analyzing..."));
+    return;
+  }
+  else {
+    const balance = String(sb.toBitcoin(address.getBalance()));
+    const fundedSum = String(sb.toBitcoin(addressStats.funded.sum));
+
+    transientLine(/* delete line to display complete info */);
+
+    stats = 
+      stats
+        .concat(balance.padEnd(16, ' '))
+        .concat("+").concat(fundedSum.padEnd(10, ' ')).concat(" ←");
+  }
 
   // optional: spent sum
   if (typeof(addressStats.spent) !== 'undefined' && addressStats.spent.sum > 0) {
@@ -50,7 +91,7 @@ function displayAddress(address) {
         .concat(" →");
   }
 
-  console.log("  ".concat(stats))
+  console.log(stats);
 }
 
 function displaySortedAddresses(addresses) {
@@ -109,4 +150,4 @@ function logStatus(status) {
   console.log(chalk.dim(status));
 }
 
-module.exports = { getJson, showSummary, logStatus, displayAddress, displaySortedAddresses }
+module.exports = { getJson, showSummary, logStatus, displayAddress, displaySortedAddresses, transientLine }

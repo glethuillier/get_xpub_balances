@@ -112,6 +112,9 @@ function scanAddresses(addressType, xpub) {
       const address = new Address(addressType, xpub, account, index)
       helpers.displayAddress(address);
 
+      const status = noTxCounter === 0 ? "analyzing" : "probing address gap"
+      process.stdout.write(chalk.yellow(status + "..."));
+
       getStats(address);
 
       const addressStats = address.getStats();
@@ -119,8 +122,6 @@ function scanAddresses(addressType, xpub) {
       if (addressStats.txs_count == 0) {
         noTxCounter++;
         helpers.transientLine(/* delete address */);
-
-        helpers.transientLine(chalk.yellow("  (probing m/" + account + "/" + index + "...)"));
 
         if (account == 1 || noTxCounter >= MAX_EXPLORATION) {
           // TODO: extend logic to account numbers > 1
@@ -150,10 +151,10 @@ function scanAddresses(addressType, xpub) {
         },
         txsCount: addressStats.txs_count
       };
-
-      address.setStats(tx);
       
       helpers.displayAddress(address);
+
+      address.setStats(tx);
 
       addresses.push(address)      
     }

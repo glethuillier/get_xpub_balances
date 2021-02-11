@@ -65,7 +65,7 @@ function displayAddress(address) {
       .concat(address.toString().padEnd(46, ' '))
 
   if (address.getStats() == undefined) {
-    process.stdout.write(stats + chalk.yellow("analyzing..."));
+    process.stdout.write(stats)
     return;
   }
   else {

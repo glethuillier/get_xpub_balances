@@ -1,7 +1,9 @@
 const request = require('sync-request');
 const chalk = require('chalk');
+const sb = require('satoshi-bitcoin');
 
 const { AddressType } = require('./settings');
+const { getSortedTransactions } = require('./transactions')
 
 function getJson(url) {
     const res = request('GET', url);
@@ -24,94 +26,47 @@ function displayAddress(address) {
   const index = address.getDerivation().index
 
   const derivationPath = String("m/".concat(account).concat("/").concat(index));
-  const addressStats = address.getStats()
+  const addressStats = address.getStats();
+
+  const balance = String(sb.toBitcoin(address.getBalance()));
+  const fundedSum = String(sb.toBitcoin(addressStats.funded.sum));
 
   // _type_  path  address ...
   var stats = 
     chalk.italic(addressType.padEnd(16, ' '))
       .concat(derivationPath.padEnd(12, ' '))
       .concat(address.toString().padEnd(46, ' '))
+      .concat(balance.padEnd(16, ' '))
+      .concat("+").concat(fundedSum.padEnd(10, ' ')).concat(" ←")
 
-    // show balance
-    if (typeof(address.getBalance()) !== 'undefined') {
-      // option 1: display balance and txs stats
-      const balance = String(address.getBalance()).padEnd(16, ' ');
-      
-      //const spentSum = String(address.getStats().spent_sum).padEnd(10, ' ');
-    
+  // optional: spent sum
+  if (typeof(addressStats.spent) !== 'undefined' && addressStats.spent.sum > 0) {
+    const spentSum = String(sb.toBitcoin(addressStats.spent.sum));
 
-      const fundedSum = String(address.getStats().funded.amount).padEnd(10, ' ');
-      stats = 
-          stats
-            .concat(balance)
-            .concat("+" + fundedSum).concat(" ←") // funded tx
-            //.concat("\t-")
-            //.concat(spentSum).concat(" (").concat(address.getStats().spent_count).concat(") "); // spent tx
-  }
-
-  // stats
-  if (typeof(addressStats) !== 'undefined' && typeof(addressStats.sent.amount) !== 'undefined' && addressStats.sent.amount > 0) {
-    // option 2: display sent amount
     stats =
       stats
         .concat("\t-")
-        .concat(String(addressStats.sent.amount).padEnd(10, ' '))
-      
-    if (addressStats.sent.self) {
-      stats = stats.concat(" ↺");
-    }
-    else {
-      stats = stats.concat(" →");
-    }
+        .concat(spentSum.padEnd(10, ' '))
+        .concat(" →");
   }
 
   console.log("  ".concat(stats))
 }
 
 function displaySortedAddresses(addresses) {
-  console.log(chalk.bold("\nTransactions History"));
+  console.log(chalk.bold("\nTransactions History").concat(chalk.redBright(" (beta feature)")));
 
-  var dates = []
+  const txs = getSortedTransactions(addresses);
 
-  addresses.forEach(address => {
-    address.stats.funded.txs.forEach(tx => {
-      dates.push(
-        {
-          address: address,
-          amount: tx.amount,
-          date: tx.date,
-          type: 'funded'
-        }
-      )
-    })
-
-    const sentDate = address.stats.sent.date
-    if (sentDate != undefined) {
-      dates.push(
-        {
-          address: address,
-          amount: -1 * (address.stats.sent.amount),
-          date: sentDate,
-          type: 'sent'
-        }
-      )
-    }
-  })
-
-  // reverse chronological order (based on block time)
-  dates = dates.sort(function(a, b) {
-    return b.date - a.date;
-  });
-
-  dates.forEach(item => {
-    const amount = item.amount;
+  txs.forEach(tx => {
+    const amount = String(sb.toBitcoin(tx.amount));
 
     status = 
-      chalk.grey(item.date)
+      chalk.grey(tx.blockHeight)
       .concat("\t")
-      .concat(item.address.toString())
+      .concat(tx.address.toString())
       .concat("\t")
-      .concat(String(amount).padEnd(10, ' '))
+      .concat(amount.padEnd(12, ' '))
 
     if (amount >= 0) {
       status = status.concat(" ←");
@@ -122,37 +77,31 @@ function displaySortedAddresses(addresses) {
 
     console.log(status);
   })
+
+  console.log(chalk.bold("\nNumber of transactions"));
+  console.log(chalk.whiteBright(txs.length))
 }
 
-function showSummary(addressType, value) {  
-  const balance = String(value.totalBalance).padEnd(12, ' ');
-  const txsCount = value.txsCount; // TODO: compute based on actual addresses
-
-  const type = chalk.italic(addressType);
-
-  var status = 
-    type
-      .concat("\t")
-      .concat(balance);
-
-  if (typeof(txsCount) !== 'undefined') {
-    status = status
-      .concat("\t")
-      .concat(txsCount);
-
-      if (txsCount < 2) {
-        status = status.concat(" tx");
-      }
-      else {
-        status = status.concat(" txs");
-      }
-  }
+function showSummary(addressType, value) {
+  const balance = String(sb.toBitcoin(value.balance));
   
   if (balance == 0) {
-    console.log(chalk.grey(status));
+    console.log(
+      chalk.grey(
+        addressType.padEnd(16, ' ')
+          .concat(balance.padEnd(12, ' '))
+      )
+    );
   }
   else {
-    console.log(chalk.blueBright(status));
+    console.log(
+      chalk.whiteBright(
+        addressType.padEnd(16, ' ')
+      )
+      .concat(
+        chalk.greenBright(balance.padEnd(12, ' '))
+      )
+    );
   }
 }
 

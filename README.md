@@ -2,7 +2,7 @@
 
 ![XPUB](./logo.png)
 
-From an xpub, get the balances of Bitcoin legacy, native SegWit, and SegWit accounts (by account+index or by active status).
+From an xpub, get the balances of Bitcoin legacy, native SegWit, and SegWit accounts.
 
 ## Features
 
@@ -20,13 +20,17 @@ From an xpub, get the balances of Bitcoin legacy, native SegWit, and SegWit acco
 
 `$ node scan.js <xpub> <account> <index>`
 
-(Example: `$ node scan.js xpub6C...44dXs7p 0 10` [addresses at account `0`, index `10`])
+Example: 
+`$ node scan.js xpub6C...44dXs7p 0 10` [addresses at account `0`, index `10`]
 
 ### Scan all active addresses
 
+_This is a slow process: please be patient_
+
 `$ node scan.js <xpub>`
 
-(Example: `$ node scan.js xpub6C...44dXs7p`)
+Example: 
+`$ node scan.js xpub6C...44dXs7p`
 
 ## Output
 
@@ -37,6 +41,11 @@ All relevant derived addresses are displayed with the corresponding balance _in 
 The tool derives addresses from the xpub (by scanning by accounts and indices) and displays, if appropriate, each derived address with its correspond type (legacy, SegWit, or native Segwit), its current balance, as well as its funded and spent transactions (amount and count).
 
 ## Interface
+
+When an analysis is performed, 3 elements are displayed in the following order:
+* The analysis of each derived active address _(slow)_
+* The ordered transactions _(instantaneous)_
+* A summary: total number of transactions and total balance by address type _(instantaneous)_
 
 ### Addresses analysis part
 

@@ -1,13 +1,9 @@
-const chalk = require('chalk');
-const util = require('util')
-const { exit } = require('process');
 const { VERBOSE } = require('./settings')
 
 function getTransactions(address, ownAddresses) {
     address.fetchRawTxs();
     preprocessTransactions(address);
     processFundedTransactions(address);
-
     processSentTransactions(address, ownAddresses);
 }
 
@@ -50,10 +46,6 @@ function preprocessTransactions(address) {
     address.setTxs(txs);
 }
 
-function showTransactions(address) {
-    console.dir(address.getTxs(), { depth: null });
-}
-
 // process amounts received
 function processFundedTransactions(address) {
     // if change address: no funded txs
@@ -88,7 +80,6 @@ function processFundedTransactions(address) {
 // process amounts sent to relevant addresses
 function processSentTransactions(address, ownAddresses) {
     const txs = address.getTxs();
-
     var sent = []
 
     //showTransactions(address)
@@ -114,7 +105,7 @@ function processSentTransactions(address, ownAddresses) {
                 });
             }
 
-            // TODO: self: ownAddress.external
+            // TODO: self (ownAddress.external)
         })
     }
 
@@ -126,7 +117,7 @@ function processSentTransactions(address, ownAddresses) {
 }
 
 // Sort transactions by block time
-// (reversed sort)
+// (reversed ordering)
 function getSortedTransactions(addresses) {
     var txs = [], processedTxs = [];
 
@@ -138,7 +129,6 @@ function getSortedTransactions(addresses) {
             address: address,
             amount: tx.amount,
             blockHeight: tx.blockHeight,
-            type: 'funded'
           }
         )
       });
@@ -150,9 +140,8 @@ function getSortedTransactions(addresses) {
           txs.push(
             {
               address: address,
-              amount: -1 * tx.amount,
+              amount: -1 * tx.amount, // make it a negative number
               blockHeight: tx.blockHeight,
-              type: 'funded'
             }
           );
   
@@ -168,6 +157,10 @@ function getSortedTransactions(addresses) {
     });
 
     return txs;
+}
+
+function showTransactions(address) {
+    console.dir(address.getTxs(), { depth: null });
 }
 
 module.exports = { getTransactions, getSortedTransactions }

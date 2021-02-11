@@ -2,20 +2,15 @@ const bjs = require('bitcoinjs-lib');
 const bip32 = require('bip32');
 
 const { AddressType } = require('./settings');
-const helpers = require('./helpers');
+const { getJson } = require('./helpers');
 const { blockstreamAPI } = require('./settings');
 
 class Address {
     constructor(type, xpub, account, index) {
-      this.xpub = xpub;
       this.address = getAddress(type, xpub, account, index);
       this.type = type;
       this.account = account;
       this.index = index;
-    }
-
-    getXpub() {
-      return this.xpub;
     }
 
     fetchRawTxs() {
@@ -73,17 +68,19 @@ class Address {
       return this.stats
     }
 
+    // returns raw transactions
     getRawTxs() {
       return this.rawTxs;
     }
 
+    // returns processed transactions
     getTxs() {
       return this.txs;
     }
   }
 
 function fetchTxs(address) {
-  return helpers.getJson(blockstreamAPI.concat(address.toString()).concat("/txs"))
+  return getJson(blockstreamAPI.concat(address.toString()).concat("/txs"))
 }
 
 // derive legacy address at account and index positions
@@ -124,6 +121,7 @@ function getLegacyAddress(xpub, account, index) {
     return address;
   }
   
+  // get address given an address type
   function getAddress(addressType, xpub, account, index) {
     switch(addressType) {
       case AddressType.LEGACY:
@@ -150,15 +148,15 @@ function getLegacyAddress(xpub, account, index) {
     }
   }
 
-  // ensure that the xpub is a valid one
+// ensure that the xpub is a valid one
 function checkXpub(xpub) {
-    try {
-      bip32.fromBase58(xpub);
-    }
-    catch (e) {
-      throw new Error("INVALID XPUB: " + xpub + " is not a valid xpub");
-    }
+  try {
+    bip32.fromBase58(xpub);
   }
+  catch (e) {
+    throw new Error("INVALID XPUB: " + xpub + " is not a valid xpub");
+  }
+}
 
 // infer address type from its syntax
 function getAddressType(address) {

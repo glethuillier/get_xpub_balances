@@ -118,10 +118,8 @@ function scanAddresses(addressType, xpub) {
         process.stdout.cursorTo(0);
         process.stdout.write(chalk.yellow("  (probing m/" + account + "/" + index + "...)"));
 
-        // TODO: ensure that we can skip account 1
         if (account == 1 || noTxCounter >= MAX_EXPLORATION) {
-          // if at account X index Y there is no transaction,
-          // all active addresses for account X have been explored: break
+          // TODO: extend logic to account numbers > 1
           process.stdout.clearLine();
           process.stdout.cursorTo(0);
           helpers.logStatus("- " + chalk.italic(typeAccount) + " addresses scanned -");

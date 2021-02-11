@@ -11,4 +11,4 @@ const MAX_EXPLORATION = 20;
 
 const VERBOSE = false;
 
-module.exports = { VERBOSE, AddressType, blockstreamAPI, MAX_EXPLORATION }
+module.exports = { AddressType, blockstreamAPI, MAX_EXPLORATION, VERBOSE }

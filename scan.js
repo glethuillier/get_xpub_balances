@@ -99,7 +99,7 @@ function getLegacyOrSegWitStats(xpub) {
 }
 
 function getFundedTx(address) {
-  const txs = helpers.getJson(blockstreamAPI.concat(address.toString()).concat("/txs"));
+  const txs = address.getTxs();
   var outTxs = [];
 
   txs.forEach(tx => {
@@ -114,12 +114,10 @@ function getFundedTx(address) {
   })
 
   return outTxs;
-
-  // console.log(outTxs);
 }
 
 function getsentTx(ownAddresses, knownAddresses, address) {
-  const txs = helpers.getJson(blockstreamAPI.concat(address.toString()).concat("/txs"));
+  const txs = address.getTxs();
 
   var sentAmount = 0;
   var recipientAddresses = [];
@@ -186,30 +184,11 @@ function generateOwnAddresses(addressType, xpub) {
   var changeAddresses = [];
 
   for(var index = 0; index < 10000; ++index) {
-    changeAddresses.push(getAddress(addressType, xpub, 0, index));
+    //changeAddresses.push(getAddress(addressType, xpub, 0, index));
     changeAddresses.push(getAddress(addressType, xpub, 1, index));
   }
 
   return changeAddresses;
-}
-
-function getDateTx(address, type) {
-  const res = helpers.getJson(blockstreamAPI + address.toString() + "/txs");
-
-  var fundedDate, sentDate;
-
-  res.forEach(tx => {
-    tx.vout.forEach(vout => {
-      if (vout.scriptpubkey_address == address.toString()) {
-        fundedDate = tx.status.block_time
-      }
-    })
-  })
-
-  return {
-    fundedDate: fundedDate,
-    sentDate: sentDate
-  }
 }
 
 // scan all active addresses
@@ -237,6 +216,11 @@ function scanAddresses(addressType, xpub) {
       const funded_sum = res.chain_stats.funded_txo_sum;
       const spent_sum = res.chain_stats.spent_txo_sum;
       const currentBalance = funded_sum - spent_sum;
+
+      if (funded_count > 0 || spent_count > 0) {
+        address.fetchTxs();
+      }
+
       var funded_time = undefined
       totalBalance += currentBalance;
 
@@ -247,7 +231,8 @@ function scanAddresses(addressType, xpub) {
         process.stdout.cursorTo(0);
         process.stdout.write(chalk.yellow("  (probing m/" + account + "/" + index + "...)"));
 
-        if (noTxCounter >= MAX_EXPLORATION) {
+        // TODO: ensure that we can skip account 1
+        if (account == 1 || noTxCounter >= MAX_EXPLORATION) {
           // if at account X index Y there is no transaction,
           // all active addresses for account X have been explored: break
           process.stdout.clearLine();
@@ -260,23 +245,13 @@ function scanAddresses(addressType, xpub) {
       }
       else {
         noTxCounter = 0;
-
-        // get date time
-        const res2 = helpers.getJson(blockstreamAPI + address.toString() + "/txs");
-        res2.forEach(tx => {
-          tx.vout.forEach(vout => {
-            if (vout.scriptpubkey_address == address.toString()) {
-              funded_time = tx.status.block_time
-            }
-          })
-        })
       }
 
       // check funded transactions
       var fundedTx = []
 
       // TODO: ensure that we do no take into consideration account == 1
-      if (funded_count > 0 && address.getDerivation().account == 0) {
+      if (account == 0 && funded_count > 0) {
         fundedTx = getFundedTx(address);
       }
 
@@ -319,6 +294,7 @@ function scanAddresses(addressType, xpub) {
   return {
     totalBalance: sb.toBitcoin(totalBalance),
     addresses: addresses
+    // TODO: return number of txs
   }
 }
 

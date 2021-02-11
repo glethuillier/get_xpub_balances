@@ -69,7 +69,7 @@ function displayAddress(address) {
 }
 
 function displaySortedAddresses(addresses) {
-  console.log(chalk.bold("\nSorted Addresses"));
+  console.log(chalk.bold("\nTransactions History"));
 
   var dates = []
 
@@ -98,10 +98,7 @@ function displaySortedAddresses(addresses) {
     }
   })
 
-  // handle amounts in same block
-
-
-
+  // reverse chronological order (based on block time)
   dates = dates.sort(function(a, b) {
     return b.date - a.date;
   });
@@ -129,7 +126,7 @@ function displaySortedAddresses(addresses) {
 
 function showSummary(addressType, value) {  
   const balance = String(value.totalBalance).padEnd(12, ' ');
-  const txsCount = value.txsCount;
+  const txsCount = value.txsCount; // TODO: compute based on actual addresses
 
   const type = chalk.italic(addressType);
 

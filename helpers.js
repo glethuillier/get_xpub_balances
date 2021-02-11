@@ -21,6 +21,10 @@ function transientLine(message) {
   }
 }
 
+function sleep(millis) {
+  return new Promise(resolve => setTimeout(resolve, millis));
+}
+
 function getJson(url, attempts = 0) {
   
   if (attempts > 5) {
@@ -36,9 +40,9 @@ function getJson(url, attempts = 0) {
   
   if (res.statusCode != 200) {
     transientLine(chalk.red("NETWORK ERROR, attempt #" + attempts));
-    setTimeout(function() {
+    sleep(1000).then(() => {
       getJson(url, attempts++);
-    }, 1000)
+    });
   }
 
   if (attempts > 0) {

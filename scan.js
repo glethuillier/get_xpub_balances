@@ -108,6 +108,8 @@ function scanAddresses(addressType, xpub) {
 
     helpers.logStatus("- scanning " + chalk.italic(typeAccount) + " addresses -");
 
+    noTxCounter = 0;
+
     for(var index = 0; index < 1000; ++index) {
       const address = new Address(addressType, xpub, account, index)
       helpers.displayAddress(address);

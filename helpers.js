@@ -66,7 +66,7 @@ function displaySortedAddresses(addresses) {
       .concat("\t")
       .concat(tx.address.toString())
       .concat("\t")
-      .concat(amount.padEnd(10, ' '))
+      .concat(amount.padEnd(12, ' '))
 
     if (amount >= 0) {
       status = status.concat(" ←");

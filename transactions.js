@@ -11,6 +11,9 @@ function getTransactions(address, ownAddresses) {
     processSentTransactions(address, ownAddresses);
 }
 
+// transforms raw transactions associated with an address
+// into an array of processed transactions:
+// [ { blocktime, txid, ins: [ { address, value }... ], outs: [ { address, value }...] } ]
 function preprocessTransactions(address) {
     var txs = [];
 
@@ -81,6 +84,7 @@ function showTransactions(address) {
     console.dir(address.getTxs(), { depth: null });
 }
 
+// process amounts received
 function processFundedTransactions(address) {
     // if change address: no funded txs
     if (address.getDerivation().account === 1) {
@@ -111,7 +115,8 @@ function processFundedTransactions(address) {
     }
 }
 
-function processSentTransactions(address, ownAddresses, processedTxs) {
+// process amounts sent to relevant addresses
+function processSentTransactions(address, ownAddresses) {
     const txs = address.getTxs();
 
     var sent = []
@@ -125,9 +130,7 @@ function processSentTransactions(address, ownAddresses, processedTxs) {
         const txid = tx.txid;
 
         // exclude addresses not present in txs ins
-        const relevant = ins.some(el => el.address === address.toString());
-
-        if (!relevant) {
+        if (!ins.some(el => el.address === address.toString())) {
             continue;
         }
 
@@ -141,7 +144,7 @@ function processSentTransactions(address, ownAddresses, processedTxs) {
                 });
             }
 
-            // self: ownAddress.external
+            // TODO: self: ownAddress.external
         })
     }
 
@@ -152,6 +155,8 @@ function processSentTransactions(address, ownAddresses, processedTxs) {
     }
 }
 
+// Sort transactions by block time
+// (reversed sort)
 function getSortedTransactions(addresses) {
     var txs = [], processedTxs = [];
 

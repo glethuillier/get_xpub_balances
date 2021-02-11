@@ -7,14 +7,23 @@ const { blockstreamAPI } = require('./settings');
 
 class Address {
     constructor(type, xpub, account, index) {
+      this.xpub = xpub;
       this.address = getAddress(type, xpub, account, index);
       this.type = type;
       this.account = account;
       this.index = index;
     }
 
-    fetchTxs() {
-      this.txs = fetchTxs(this.address);
+    getXpub() {
+      return this.xpub;
+    }
+
+    fetchRawTxs() {
+      this.rawTxs = fetchTxs(this.address);
+    }
+
+    setTxs(txs) {
+      this.txs = txs;
     }
   
     setBalance(balance) {
@@ -24,10 +33,21 @@ class Address {
     setStats(stats) {
       this.stats = stats;
     }
-  
-    setSent(amount, self) {
-      this.sent.amount = amount;
-      this.sent.self = self;
+
+    setFunded(funded) {
+      this.funded = funded;
+    }
+
+    getFunded() {
+      return this.funded;
+    }
+
+    setSent(sent) {
+      this.sent = sent;
+    }
+
+    getSent() {
+      return this.sent;
     }
   
     toString() {
@@ -51,6 +71,10 @@ class Address {
   
     getStats() {
       return this.stats
+    }
+
+    getRawTxs() {
+      return this.rawTxs;
     }
 
     getTxs() {

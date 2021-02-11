@@ -1,9 +1,9 @@
-const sb = require('satoshi-bitcoin');
 const chalk = require('chalk');
 
 const helpers = require('./helpers');
 const { Address, getAddress, checkXpub } = require('./address');
-const { AddressType, blockchainAPI, blockstreamAPI, MAX_EXPLORATION } = require('./settings');
+const { AddressType, blockstreamAPI, MAX_EXPLORATION } = require('./settings');
+const { getTransactions } = require('./transactions')
 
 // Option 1: one arg -> xpub
 var args = process.argv.slice(2);
@@ -14,6 +14,7 @@ if (typeof args[0] === 'undefined') {
 
 const xpub = args[0];
 checkXpub(xpub);
+const ownAddresses = generateOwnAddresses(xpub);
 
 var account, index;
 // Option 2: three args -> xpub account index
@@ -22,27 +23,26 @@ if (typeof args[2] !== 'undefined') {
   index = parseInt(args[2]);
 }
 
-// get stats (balance, txs sum and count) for an address
-function getStats(address) {
-  const res = helpers.getJson(blockstreamAPI + address.toString());
-  const stats = res.chain_stats;
+// generate addresses associated with the xpub
+function generateOwnAddresses(xpub) {
+  var external = [], internal = [];
 
-  const funded = stats.funded_txo_sum;
-  const spent = stats.spent_txo_sum;
-  
-  const balance = funded - spent;
-
-  address.setBalance(balance);
-  address.setStats({
-    funded: {
-      amount: sb.toBitcoin(funded)
-    },
-  })
-
-  helpers.displayAddress(address);
+  [
+      AddressType.LEGACY,
+      AddressType.SEGWIT,
+      AddressType.NATIVE
+  ]
+  .forEach(addressType => {
+      for(var index = 0; index < 10000; ++index) {
+          external.push(getAddress(addressType, xpub, 0, index));
+          internal.push(getAddress(addressType, xpub, 1, index));
+      }
+  });
 
   return {
-    totalBalance: sb.toBitcoin(balance)
+    external: external,
+    internal: internal,
+    all: internal.concat(external)
   };
 }
 
@@ -61,172 +61,53 @@ function getLegacyOrSegWitStats(xpub) {
   const legacy = scanAddresses(AddressType.LEGACY, xpub);
   const segwit = scanAddresses(AddressType.SEGWIT, xpub);
 
-  helpers.logStatus("Fetching legacy/SegWit infos...\n");
-
-  const baseUrl = blockchainAPI.concat(xpub).concat("&offset=");
-
-  var balance = 0;
-  var uniqueTxs = new Set(); 
-
-  // iterate over blockchain.info endpoint offset
-  // in order to get all transactions hashs
-  // and make them uniques
-  for(var offset = 0; offset < 1000; offset += 10) {
-    const url = baseUrl.concat(offset);
-    const res = helpers.getJson(url);
-
-    // retrieve the balance once
-    if (offset == 0) {
-      res.addresses.forEach(item => balance += item.final_balance);
-    }
-
-    const txs = res.txs;
-
-    // no txs found: 
-    // no need to continue increasing the offset
-    if (txs.length === 0) {
-      break;
-    }
-
-    txs.forEach(tx => uniqueTxs.add(tx.hash));
-  }
+  const totalBalance = legacy.totalBalance + segwit.totalBalance
 
   return {
-    totalBalance: sb.toBitcoin(balance),
-    txsCount: uniqueTxs.size,
+    totalBalance: totalBalance,
     addresses: legacy.addresses.concat(segwit.addresses)
   };
 }
 
-function getFundedTx(address) {
-  const txs = address.getTxs();
-  var outTxs = [];
+function getStats(address) {
+  const res = helpers.getJson(blockstreamAPI + address.toString());
 
-  txs.forEach(tx => {
-    tx.vout.forEach(vout => {
-      if (vout.scriptpubkey_address == address.toString()) {
-        outTxs.push({
-          amount: sb.toBitcoin(vout.value), 
-          date: tx.status.block_time
-        });
-      }
-    })
-  })
+  const funded_sum = res.chain_stats.funded_txo_sum;
+  const spent_sum = res.chain_stats.spent_txo_sum;
+  const balance = funded_sum - spent_sum;
 
-  return outTxs;
-}
-
-function getsentTx(ownAddresses, knownAddresses, address) {
-  const txs = address.getTxs();
-
-  var sentAmount = 0;
-  var recipientAddresses = [];
-  var outTxs = [];
-  var sentDate
-  var lookup = true;
-
-  txs.forEach(tx => {
-    tx.vout.forEach(vout => {
-      outTxs.push(vout);
-    })
-  })
-
-  // are all out addresses internal ones?
-  const selfSent = outTxs.every(v => ownAddresses.all.includes(v.scriptpubkey_address));
-
-  for(var i = 0; i < txs.length && lookup; i++) {
-    const tx = txs[i];
-
-    if (selfSent) { 
-      // edge case: self-sent transaction
-      sentAmount = txs[0].vout[0].value; // TODO: rework
-      sentDate = txs[0].status.block_time;
-      lookup = false;
-      break;
-    }
-    else { 
-      // common case: sent to external address
-      for (var j = 0; j < txs[i].vout.length && lookup; ++j) {
-        const vout = tx.vout[j];
-        const outAddress = vout.scriptpubkey_address;
-
-        // is it a known address?
-        const knownAddress = knownAddresses.includes(outAddress);
-
-        if (!knownAddress) {
-          // sent to unknown address
-          sentAmount = vout.value;
-          recipientAddresses.push(outAddress);
-          sentDate = tx.status.block_time;
-          lookup = false;
-          break;
-        }
-        else {
-          // remove one instance of known external address at a time
-          // to take into account subsequent funds sent to the same external address
-          knownAddresses = knownAddresses.filter(a => a !== outAddress);
-        }
-      }
-    }
-    
+  const stats = {
+    txs_count: res.chain_stats.tx_count,
+    funded_count: res.chain_stats.funded_txo_count,
+    spent_count: res.chain_stats.spent_txo_count,
+    funded_sum: funded_sum,
+    spent_sum: spent_sum,
+    balance: balance
   }
 
-  return {
-    recipientAddresses: recipientAddresses,
-    amount: sb.toBitcoin(sentAmount),
-    self: selfSent,
-    date: sentDate
-  };
-}
-
-// generate addresses associated with the xpub
-function generateOwnAddresses(addressType, xpub) {
-  var external = [], internal = [];
-
-  for(var index = 0; index < 10000; ++index) {
-    external.push(getAddress(addressType, xpub, 0, index));
-    internal.push(getAddress(addressType, xpub, 1, index));
-  }
-
-  return {
-    external: external,
-    internal: internal,
-    all: internal.concat(external)
-  };
+  address.setStats(stats);
 }
 
 // scan all active addresses
 function scanAddresses(addressType, xpub) {
   helpers.logStatus("Scanning ".concat(chalk.bold(addressType)).concat(" addresses..."));
 
-  var ownAddresses = generateOwnAddresses(addressType, xpub);
-  var knownAddresses = ownAddresses.internal;
-  var totalBalance = 0;
-  var noTxCounter = 0;
+  var totalBalance = 0, noTxCounter = 0;
   var addresses = []
 
   for(var account = 0; account < 2; ++account) {
-    helpers.logStatus("- scanning account " + account + " -");
+    const typeAccount = account == 0 ? "external" : "internal";
+
+    helpers.logStatus("- scanning " + chalk.italic(typeAccount) + " addresses -");
 
     for(var index = 0; index < 1000; ++index) {
       const address = new Address(addressType, xpub, account, index)
-      const res = helpers.getJson(blockstreamAPI + address.toString());
 
-      const txsCount = res.chain_stats.tx_count;
-      //const total_received = res.chain_stats.funded_txo_sum;
-      const funded_count = res.chain_stats.funded_txo_count;
-      const spent_count = res.chain_stats.spent_txo_count;
-      const funded_sum = res.chain_stats.funded_txo_sum;
-      const spent_sum = res.chain_stats.spent_txo_sum;
-      const currentBalance = funded_sum - spent_sum;
+      getStats(address);
 
-      if (funded_count > 0 || spent_count > 0) {
-        address.fetchTxs();
-      }
+      const addressStats = address.getStats();
 
-      totalBalance += currentBalance;
-
-      if (txsCount == 0) {
+      if (addressStats.txs_count == 0) {
         noTxCounter++;
 
         process.stdout.clearLine();
@@ -239,7 +120,7 @@ function scanAddresses(addressType, xpub) {
           // all active addresses for account X have been explored: break
           process.stdout.clearLine();
           process.stdout.cursorTo(0);
-          helpers.logStatus("- account " + account + " fully scanned -");
+          helpers.logStatus("- " + chalk.italic(typeAccount) + " addresses scanned -");
           break;
         }
 
@@ -249,35 +130,22 @@ function scanAddresses(addressType, xpub) {
         noTxCounter = 0;
       }
 
-      // check funded transactions
-      var fundedTx = []
+      getTransactions(address, ownAddresses);
 
-      // TODO: ensure that we do no take into consideration account == 1
-      if (account == 0 && funded_count > 0) {
-        fundedTx = getFundedTx(address);
-      }
+      totalBalance += addressStats.balance;
 
-      // check sent transactions
-      var sentTx = {} 
-      if (spent_count > 0) {
-        sentTx = getsentTx(ownAddresses, knownAddresses, address);
-        knownAddresses = knownAddresses.concat(sentTx.recipientAddresses);
-      }
-
-      address.setBalance(sb.toBitcoin(currentBalance));
+      address.setBalance(addressStats.balance);
 
       var tx = {
         funded: {
-          count: funded_count,
-          amount: sb.toBitcoin(funded_sum),
-          txs: fundedTx
+          count: addressStats.funded_count,
+          sum: addressStats.funded_sum,
         },
-        sent: {
-          amount: sentTx.amount,
-          self: sentTx.self,
-          date: sentTx.date
+        spent: {
+          count: addressStats.spent_count,
+          sum: addressStats.spent_sum,
         },
-        txsCount: txsCount
+        txsCount: addressStats.txs_count
       };
 
       address.setStats(tx);
@@ -291,7 +159,7 @@ function scanAddresses(addressType, xpub) {
   helpers.logStatus(addressType.concat(" addresses scanned\n"));
 
   return {
-    totalBalance: sb.toBitcoin(totalBalance),
+    totalBalance: totalBalance, // in satoshis
     addresses: addresses
     // TODO: return number of txs
   }

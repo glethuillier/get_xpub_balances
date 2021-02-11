@@ -54,7 +54,7 @@ function displayAddress(address) {
 }
 
 function displaySortedAddresses(addresses) {
-  console.log(chalk.bold("\nTransactions History"));
+  console.log(chalk.bold("\nTransactions History").concat(chalk.redBright(" (beta feature)")));
 
   const txs = getSortedTransactions(addresses);
 
@@ -62,7 +62,7 @@ function displaySortedAddresses(addresses) {
     const amount = String(sb.toBitcoin(tx.amount));
 
     status = 
-      chalk.grey(tx.blockTime)
+      chalk.grey(tx.blockHeight)
       .concat("\t")
       .concat(tx.address.toString())
       .concat("\t")
@@ -79,38 +79,29 @@ function displaySortedAddresses(addresses) {
   })
 
   console.log(chalk.bold("\nNumber of transactions"));
-  console.log(chalk.yellowBright(txs.length))
+  console.log(chalk.whiteBright(txs.length))
 }
 
-function showSummary(addressType, value) {  
-  const balance = String(sb.toBitcoin(value.totalBalance));
-  const txsCount = value.txsCount; // TODO: compute based on actual addresses
-
-  const type = chalk.italic(addressType);
-
-  var status = 
-    type
-      .concat("\t")
-      .concat(balance.padEnd(12, ' '));
-
-  if (typeof(txsCount) !== 'undefined') {
-    status = status
-      .concat("\t")
-      .concat(txsCount);
-
-      if (txsCount < 2) {
-        status = status.concat(" tx");
-      }
-      else {
-        status = status.concat(" txs");
-      }
-  }
+function showSummary(addressType, value) {
+  const balance = String(sb.toBitcoin(value.balance));
   
   if (balance == 0) {
-    console.log(chalk.grey(status));
+    console.log(
+      chalk.grey(
+        addressType.padEnd(16, ' ')
+          .concat(balance.padEnd(12, ' '))
+      )
+    );
   }
   else {
-    console.log(chalk.blueBright(status));
+    console.log(
+      chalk.whiteBright(
+        addressType.padEnd(16, ' ')
+      )
+      .concat(
+        chalk.greenBright(balance.padEnd(12, ' '))
+      )
+    );
   }
 }
 

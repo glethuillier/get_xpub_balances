@@ -1,4 +1,4 @@
-const AddressType = { LEGACY: "legacy", NATIVE: "native", SEGWIT: "SegWit", LEGACY_OR_SEGWIT: "legacy/SegWit", ALL: "all"};
+const AddressType = { LEGACY: "Legacy", NATIVE: "Native SegWit", SEGWIT: "SegWit", LEGACY_OR_SEGWIT: "Legacy/SegWit", ALL: "all"};
 Object.freeze(AddressType);
 
 // blockstream API to retrieve stats related to a given address

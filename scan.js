@@ -51,7 +51,7 @@ function updateSummary(summary, addressType, value) {
     summary.set(addressType, value);
   }
   else {
-    summary.get(addressType).totalBalance += value.totalBalance;
+    summary.get(addressType).balance += value.balance;
     summary.get(addressType).addresses.concat(value.addresses);
   }
 }
@@ -61,10 +61,10 @@ function getLegacyOrSegWitStats(xpub) {
   const legacy = scanAddresses(AddressType.LEGACY, xpub);
   const segwit = scanAddresses(AddressType.SEGWIT, xpub);
 
-  const totalBalance = legacy.totalBalance + segwit.totalBalance
+  const totalBalance = legacy.balance + segwit.balance
 
   return {
-    totalBalance: totalBalance,
+    balance: totalBalance,
     addresses: legacy.addresses.concat(segwit.addresses)
   };
 }
@@ -78,14 +78,18 @@ function getStats(address) {
 
   const stats = {
     txs_count: res.chain_stats.tx_count,
-    funded_count: res.chain_stats.funded_txo_count,
-    spent_count: res.chain_stats.spent_txo_count,
-    funded_sum: funded_sum,
-    spent_sum: spent_sum,
-    balance: balance
+    funded: {
+      count: res.chain_stats.funded_txo_count,
+      sum: funded_sum
+    },
+    spent: {
+      count: res.chain_stats.spent_txo_count,
+      sum: spent_sum
+    }
   }
 
   address.setStats(stats);
+  address.setBalance(balance);
 }
 
 // scan all active addresses
@@ -132,18 +136,16 @@ function scanAddresses(addressType, xpub) {
 
       getTransactions(address, ownAddresses);
 
-      totalBalance += addressStats.balance;
-
-      address.setBalance(addressStats.balance);
+      totalBalance += address.getBalance();
 
       var tx = {
         funded: {
-          count: addressStats.funded_count,
-          sum: addressStats.funded_sum,
+          count: addressStats.funded.count,
+          sum: addressStats.funded.sum,
         },
         spent: {
-          count: addressStats.spent_count,
-          sum: addressStats.spent_sum,
+          count: addressStats.spent.count,
+          sum: addressStats.spent.sum,
         },
         txsCount: addressStats.txs_count
       };
@@ -159,9 +161,8 @@ function scanAddresses(addressType, xpub) {
   helpers.logStatus(addressType.concat(" addresses scanned\n"));
 
   return {
-    totalBalance: totalBalance, // in satoshis
+    balance: totalBalance, // in satoshis
     addresses: addresses
-    // TODO: return number of txs
   }
 }
 
@@ -178,7 +179,7 @@ if (typeof(index) === 'undefined') {
   const nativeSegwit = scanAddresses(AddressType.NATIVE, xpub);
   updateSummary(summary, AddressType.NATIVE, nativeSegwit);
 
-  helpers.displaySortedAddresses(legacyOrSegwit.addresses.concat(nativeSegwit.addresses)) // TODO: varargs
+  helpers.displaySortedAddresses(legacyOrSegwit.addresses.concat(nativeSegwit.addresses))
 }
 else {
   // Option B: an index has been provided:
@@ -190,9 +191,12 @@ else {
     AddressType.NATIVE
   ].forEach(addressType => {
     const address = new Address(addressType, xpub, account, index);
-    const balance = getStats(address);
 
-    updateSummary(summary, addressType, balance);
+    getStats(address);
+
+    helpers.displayAddress(address);
+    
+    updateSummary(summary, addressType, address);
   })
 }
 

@@ -13,14 +13,14 @@ function getTransactions(address, ownAddresses) {
 
 // transforms raw transactions associated with an address
 // into an array of processed transactions:
-// [ { blocktime, txid, ins: [ { address, value }... ], outs: [ { address, value }...] } ]
+// [ { blockHeight, txid, ins: [ { address, value }... ], outs: [ { address, value }...] } ]
 function preprocessTransactions(address) {
     var txs = [];
 
     const rawTxs = address.getRawTxs();
 
     rawTxs.forEach(tx => {
-        const blockTime = tx.status.block_time;
+        const blockHeight = tx.status.block_height;
 
         var ins = [], outs = [];
 
@@ -39,43 +39,13 @@ function preprocessTransactions(address) {
         })
 
         txs.push({
-            blockTime: blockTime,
+            blockHeight: blockHeight,
             txid: tx.txid,
             ins: ins,
             outs: outs
         })
 
     });
-
-    // Example
-    // [
-    //     {
-    //       blockTime: 1599829892,
-    //       ins: [ { address: '1BwEdNZ7r8drLGbkxhinCLd1RDxNAnq3Z5', value: 50000 } ],
-    //       outs: [
-    //         { address: '1JKb34BANEtLLgpwGFm8CF6BdoE9soez8a', value: 10000 },
-    //         { address: '183NM6MWjT3fNCtYp3dAa9g51iiW9TghFn', value: 20338 }
-    //       ]
-    //     },
-    //     {
-    //       blockTime: 1597083248,
-    //       ins: [
-    //         {
-    //           address: 'bc1qeppkveqf7hp60s6nyya8t42ml5zhfe5mv8z502',
-    //           value: 51885
-    //         },
-    //         {
-    //           address: 'bc1qv76etu0vq80kezpfvydm5hle2uvzsdqfwgy24c',
-    //           value: 15906
-    //         },
-    //         {
-    //           address: 'bc1q94qxdwuzqkwkj3e6kjg2j3jlgvsxawtqh3hrgj',
-    //           value: 10000
-    //         }
-    //       ],
-    //       outs: [ { address: '1BwEdNZ7r8drLGbkxhinCLd1RDxNAnq3Z5', value: 50000 } ]
-    //     }
-    //   ]
 
     address.setTxs(txs);
 }
@@ -101,7 +71,7 @@ function processFundedTransactions(address) {
             if (out.address == address.toString()) {
                 funded.push({
                     txid: tx.txid,
-                    blockTime: tx.blockTime,
+                    blockHeight: tx.blockHeight,
                     amount: out.value
                 })
             }
@@ -139,7 +109,7 @@ function processSentTransactions(address, ownAddresses) {
             if (!ownAddresses.internal.includes(out.address)) {
                 sent.push({
                     txid: txid,
-                    blockTime: tx.blockTime,
+                    blockHeight: tx.blockHeight,
                     amount: out.value
                 });
             }
@@ -167,7 +137,7 @@ function getSortedTransactions(addresses) {
           {
             address: address,
             amount: tx.amount,
-            blockTime: tx.blockTime,
+            blockHeight: tx.blockHeight,
             type: 'funded'
           }
         )
@@ -181,7 +151,7 @@ function getSortedTransactions(addresses) {
             {
               address: address,
               amount: -1 * tx.amount,
-              blockTime: tx.blockTime,
+              blockHeight: tx.blockHeight,
               type: 'funded'
             }
           );
@@ -194,7 +164,7 @@ function getSortedTransactions(addresses) {
   
     // reverse chronological order (based on block time)
     txs = txs.sort(function(a, b) {
-      return b.blockTime - a.blockTime;
+      return b.blockHeight - a.blockHeight;
     });
 
     return txs;

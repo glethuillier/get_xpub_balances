@@ -2,6 +2,8 @@ const bjs = require('bitcoinjs-lib');
 const bip32 = require('bip32');
 
 const { AddressType } = require('./settings');
+const helpers = require('./helpers');
+const { blockstreamAPI } = require('./settings');
 
 class Address {
     constructor(type, xpub, account, index) {
@@ -10,18 +12,22 @@ class Address {
       this.account = account;
       this.index = index;
     }
+
+    fetchTxs() {
+      this.txs = fetchTxs(this.address);
+    }
   
     setBalance(balance) {
         this.balance = balance;
     }
   
-    setStats(Stats) {
-      this.Stats = Stats;
+    setStats(stats) {
+      this.stats = stats;
     }
   
     setSent(amount, self) {
-      this.sentAmount = amount;
-      this.selfSent = self;
+      this.sent.amount = amount;
+      this.sent.self = self;
     }
   
     toString() {
@@ -44,18 +50,19 @@ class Address {
     }
   
     getStats() {
-      return this.Stats
+      return this.stats
     }
-  
-    getSent() {
-      return {
-        amount: this.sentAmount,
-        self: this.selfSent
-      }
+
+    getTxs() {
+      return this.txs;
     }
   }
 
-  // derive legacy address at account and index positions
+function fetchTxs(address) {
+  return helpers.getJson(blockstreamAPI.concat(address.toString()).concat("/txs"))
+}
+
+// derive legacy address at account and index positions
 function getLegacyAddress(xpub, account, index) {
     const { address } = bjs.payments.p2pkh({
       pubkey: bip32

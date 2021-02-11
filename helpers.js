@@ -24,6 +24,7 @@ function displayAddress(address) {
   const index = address.getDerivation().index
 
   const derivationPath = String("m/".concat(account).concat("/").concat(index));
+  const addressStats = address.getStats()
 
   // _type_  path  address ...
   var stats = 
@@ -31,27 +32,32 @@ function displayAddress(address) {
       .concat(derivationPath.padEnd(12, ' '))
       .concat(address.toString().padEnd(46, ' '))
 
-  if (typeof(address.getBalance()) !== 'undefined') {
-    // option 1: display balance and txs stats
-    const balance = String(address.getBalance())
-    const fundedSum = String(address.getStats().funded_sum).padEnd(10, ' ');
-    //const spentSum = String(address.getStats().spent_sum).padEnd(10, ' ');
+    // show balance
+    if (typeof(address.getBalance()) !== 'undefined') {
+      // option 1: display balance and txs stats
+      const balance = String(address.getBalance()).padEnd(16, ' ');
+      
+      //const spentSum = String(address.getStats().spent_sum).padEnd(10, ' ');
+    
 
-    stats = 
-      stats
-        .concat("+" + fundedSum.padEnd(10, ' ')).concat(" ←") // funded tx
-        //.concat("\t-")
-        //.concat(spentSum).concat(" (").concat(address.getStats().spent_count).concat(") "); // spent tx
-        .concat("\t\t" + balance)
+      const fundedSum = String(address.getStats().funded.amount).padEnd(10, ' ');
+      stats = 
+          stats
+            .concat(balance)
+            .concat("+" + fundedSum).concat(" ←") // funded tx
+            //.concat("\t-")
+            //.concat(spentSum).concat(" (").concat(address.getStats().spent_count).concat(") "); // spent tx
   }
-  else if (typeof(address.getSent()) !== 'undefined' && address.getSent().amount > 0) {
+
+  // stats
+  if (typeof(addressStats) !== 'undefined' && typeof(addressStats.sent.amount) !== 'undefined' && addressStats.sent.amount > 0) {
     // option 2: display sent amount
     stats =
       stats
-        .concat("-")
-        .concat(String(address.getSent().amount).padEnd(10, ' '))
+        .concat("\t-")
+        .concat(String(addressStats.sent.amount).padEnd(10, ' '))
       
-    if (address.getSent().self) {
+    if (addressStats.sent.self) {
       stats = stats.concat(" ↺");
     }
     else {
@@ -62,9 +68,65 @@ function displayAddress(address) {
   console.log("  ".concat(stats))
 }
 
-function showSummary(addressType, value) {
+function displaySortedAddresses(addresses) {
+  console.log(chalk.bold("\nTransactions History"));
+
+  var dates = []
+
+  addresses.forEach(address => {
+    address.stats.funded.txs.forEach(tx => {
+      dates.push(
+        {
+          address: address,
+          amount: tx.amount,
+          date: tx.date,
+          type: 'funded'
+        }
+      )
+    })
+
+    const sentDate = address.stats.sent.date
+    if (sentDate != undefined) {
+      dates.push(
+        {
+          address: address,
+          amount: -1 * (address.stats.sent.amount),
+          date: sentDate,
+          type: 'sent'
+        }
+      )
+    }
+  })
+
+  // reverse chronological order (based on block time)
+  dates = dates.sort(function(a, b) {
+    return b.date - a.date;
+  });
+
+  dates.forEach(item => {
+    const amount = item.amount;
+
+    status = 
+      chalk.grey(item.date)
+      .concat("\t")
+      .concat(item.address.toString())
+      .concat("\t")
+      .concat(String(amount).padEnd(10, ' '))
+
+    if (amount >= 0) {
+      status = status.concat(" ←");
+    }
+    else {
+      status = status.concat(" →");
+    }
+
+    console.log(status);
+  })
+}
+
+function showSummary(addressType, value) {  
   const balance = String(value.totalBalance).padEnd(12, ' ');
-  const txsCount = value.txsCount;
+  const txsCount = value.txsCount; // TODO: compute based on actual addresses
 
   const type = chalk.italic(addressType);
 
@@ -98,4 +160,4 @@ function logStatus(status) {
   console.log(chalk.dim(status));
 }
 
-module.exports = { getJson, showSummary, logStatus, displayAddress }
+module.exports = { getJson, showSummary, logStatus, displayAddress, displaySortedAddresses }

@@ -4,6 +4,12 @@
 
 From an xpub, get the balances of Bitcoin legacy, native SegWit, and SegWit accounts (by account+index or by active status).
 
+## Features
+
+* Privacy Friendly: xpubs are not sent over the Internet: only their derived addresses are 
+* Derives specific addresses (by account+index) or all active ones
+* Supports legacy, SegWit, and Native Segwit
+
 ## Install
 
 `$ npm i`
@@ -29,6 +35,16 @@ All relevant derived addresses are displayed with the corresponding balance _in 
 ## Operation mode
 
 The tool derives addresses from the xpub (by scanning by accounts and indices) and displays, if appropriate, each derived address with its correspond type (legacy, SegWit, or native Segwit), its current balance, as well as its funded and spent transactions (amount and count).
+
+## Interface
+
+### Addresses analysis part
+
+![interface 1](./interface_1.png)
+
+### Transactions and summary parts
+
+![interface 2](./interface_2.png)
 
 ## Example 1: specific account and index
 

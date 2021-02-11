@@ -132,7 +132,7 @@ function getsentTx(ownAddresses, knownAddresses, address) {
   })
 
   // are all out addresses internal ones?
-  const selfSent = outTxs.every(v => ownAddresses.includes(v.scriptpubkey_address));
+  const selfSent = outTxs.every(v => ownAddresses.all.includes(v.scriptpubkey_address));
 
   for(var i = 0; i < txs.length && lookup; i++) {
     const tx = txs[i];
@@ -181,14 +181,18 @@ function getsentTx(ownAddresses, knownAddresses, address) {
 
 // generate addresses associated with the xpub
 function generateOwnAddresses(addressType, xpub) {
-  var changeAddresses = [];
+  var external = [], internal = [];
 
   for(var index = 0; index < 10000; ++index) {
-    //changeAddresses.push(getAddress(addressType, xpub, 0, index));
-    changeAddresses.push(getAddress(addressType, xpub, 1, index));
+    external.push(getAddress(addressType, xpub, 0, index));
+    internal.push(getAddress(addressType, xpub, 1, index));
   }
 
-  return changeAddresses;
+  return {
+    external: external,
+    internal: internal,
+    all: internal.concat(external)
+  };
 }
 
 // scan all active addresses
@@ -196,8 +200,7 @@ function scanAddresses(addressType, xpub) {
   helpers.logStatus("Scanning ".concat(chalk.bold(addressType)).concat(" addresses..."));
 
   var ownAddresses = generateOwnAddresses(addressType, xpub);
-  var knownAddresses = ownAddresses;
-  var txs = [];
+  var knownAddresses = ownAddresses.internal;
   var totalBalance = 0;
   var noTxCounter = 0;
   var addresses = []
@@ -221,7 +224,6 @@ function scanAddresses(addressType, xpub) {
         address.fetchTxs();
       }
 
-      var funded_time = undefined
       totalBalance += currentBalance;
 
       if (txsCount == 0) {
@@ -282,10 +284,7 @@ function scanAddresses(addressType, xpub) {
       
       helpers.displayAddress(address);
 
-      addresses.push(address)
-
-      //txs.push(tx);
-      
+      addresses.push(address)      
     }
   }
 

@@ -1,5 +1,6 @@
 const { getAddressType, getAddress } = require('./address');
 const { showComparisonResult } = require('../display')
+var query = require('cli-interact').getYesNo;
 
 const chalk = require('chalk');
 
@@ -28,6 +29,19 @@ function search(xpub, address, range) {
                 return {
                     account: account,
                     index: index
+                }
+            }
+
+            if (generatedAddress.toLocaleUpperCase().startsWith(address.toUpperCase())) {
+                console.log(chalk.blueBright(status));
+                const continueToSearch = query('Press enter to continue...');
+                
+                if (!continueToSearch) {
+                    return {
+                        partial: generatedAddress,
+                        account: account,
+                        index: index
+                    }
                 }
             }
 

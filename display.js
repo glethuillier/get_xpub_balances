@@ -120,23 +120,34 @@ function transientLine(message) {
 function showComparisonResult(xpub, address, result) {
 
   console.log("\nXpub:", chalk.whiteBright(xpub));
-  console.log("Address:", chalk.whiteBright(address));
+  console.log("Provided address:", chalk.whiteBright(address));
 
   if (Object.keys(result).length === 0) {
+    // no match
     console.log(chalk.redBright(
       "The address does not seem to have been derived from this xpub!"
     ))
   }
   else {
     const derivationPath = 
-      "m/".concat(result.account)
-        .concat("/")
+    "m/".concat(result.account)
+      .concat("/")
       .concat(result.index)
 
-    console.log(chalk.greenBright(
-      "The address has been derived from this xpub using derivation path "
-        .concat(chalk.bold(derivationPath))
-    ))
+    if (typeof result.partial == 'undefined') {
+      // full match
+      console.log(chalk.greenBright(
+        "The address has been derived from this xpub using derivation path "
+          .concat(chalk.bold(derivationPath))));
+    }
+    else {
+      // partial match
+      console.log("Derived address: ", chalk.whiteBright(result.partial));
+
+      console.log(chalk.blueBright(
+        "There is a partial match between the provided address and the one derived using derivation path "
+          .concat(chalk.bold(derivationPath))));
+    }
   }
 }
 

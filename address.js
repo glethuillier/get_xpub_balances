@@ -2,19 +2,19 @@ const bjs = require('bitcoinjs-lib');
 const bip32 = require('bip32');
 
 const { AddressType } = require('./settings');
-const { getJson } = require('./helpers');
-const { blockstreamAPI } = require('./settings');
+const { getNetwork } = require('./helpers');
 
 class Address {
-    constructor(type, xpub, account, index) {
+    constructor(network, type, xpub, account, index) {
+      this.network = network
       this.address = getAddress(type, xpub, account, index);
       this.type = type;
       this.account = account;
       this.index = index;
     }
 
-    fetchRawTxs() {
-      this.rawTxs = fetchTxs(this.address);
+    getNetwork() {
+      return this.network;
     }
 
     setTxs(txs) {
@@ -68,20 +68,10 @@ class Address {
       return this.stats
     }
 
-    // returns raw transactions
-    getRawTxs() {
-      return this.rawTxs;
-    }
-
-    // returns processed transactions
     getTxs() {
       return this.txs;
     }
   }
-
-function fetchTxs(address) {
-  return getJson(blockstreamAPI.concat(address.toString()).concat("/txs"))
-}
 
 // derive legacy address at account and index positions
 function getLegacyAddress(xpub, account, index) {
@@ -90,6 +80,7 @@ function getLegacyAddress(xpub, account, index) {
         .fromBase58(xpub)
         .derive(account)
         .derive(index).publicKey,
+      network: getNetwork(xpub)
     });
   
     return address;
@@ -102,6 +93,7 @@ function getLegacyAddress(xpub, account, index) {
           .fromBase58(xpub)
           .derive(account)
           .derive(index).publicKey,
+        network: getNetwork(xpub)
     });
   
     return address;
@@ -115,6 +107,7 @@ function getLegacyAddress(xpub, account, index) {
           .fromBase58(xpub)
           .derive(account)
           .derive(index).publicKey,
+        network: getNetwork(xpub)
       }),
     });
   
@@ -148,16 +141,6 @@ function getLegacyAddress(xpub, account, index) {
     }
   }
 
-// ensure that the xpub is a valid one
-function checkXpub(xpub) {
-  try {
-    bip32.fromBase58(xpub);
-  }
-  catch (e) {
-    throw new Error("INVALID XPUB: " + xpub + " is not a valid xpub");
-  }
-}
-
 // infer address type from its syntax
 function getAddressType(address) {
     if (address.startsWith('bc1')) {
@@ -178,4 +161,4 @@ function getAddressType(address) {
     }
   }
 
-  module.exports = { Address, getAddress, checkXpub }
+  module.exports = { Address, getAddress }

@@ -1,7 +1,21 @@
-const { VERBOSE } = require('./settings')
+const { VERBOSE, BITCOIN_NETWORK, LITECOIN_NETWORK } = require('./settings')
+const bitcoin = require('./coins/bitcoin')
+
+function getStats(address) {
+    const network = address.getNetwork();
+
+    switch(network) {
+        case BITCOIN_NETWORK:
+            bitcoin.getStats(address);
+            break;
+        case LITECOIN_NETWORK:
+            // TODO(litecoin)
+            console.log('Not implemented yet');
+            break;
+    }
+}
 
 function getTransactions(address, ownAddresses) {
-    address.fetchRawTxs();
     preprocessTransactions(address);
     processFundedTransactions(address);
     processSentTransactions(address, ownAddresses);
@@ -11,39 +25,17 @@ function getTransactions(address, ownAddresses) {
 // into an array of processed transactions:
 // [ { blockHeight, txid, ins: [ { address, value }... ], outs: [ { address, value }...] } ]
 function preprocessTransactions(address) {
-    var txs = [];
+    const network = address.getNetwork();
 
-    const rawTxs = address.getRawTxs();
-
-    rawTxs.forEach(tx => {
-        const blockHeight = tx.status.block_height;
-
-        var ins = [], outs = [];
-
-        tx.vin.forEach(vin => {
-            ins.push({
-                address: vin.prevout.scriptpubkey_address,
-                value: vin.prevout.value
-            })
-        })
-
-        tx.vout.forEach(vout => {
-            outs.push({
-                address: vout.scriptpubkey_address,
-                value: vout.value
-            })
-        })
-
-        txs.push({
-            blockHeight: blockHeight,
-            txid: tx.txid,
-            ins: ins,
-            outs: outs
-        })
-
-    });
-
-    address.setTxs(txs);
+    switch(network) {
+        case BITCOIN_NETWORK:
+            bitcoin.getTxs(address);
+            break;
+        case LITECOIN_NETWORK:
+            // TODO(litecoin)
+            console.log('Not implemented yet');
+            break;
+    }
 }
 
 // process amounts received
@@ -163,4 +155,4 @@ function showTransactions(address) {
     console.dir(address.getTxs(), { depth: null });
 }
 
-module.exports = { getTransactions, getSortedTransactions }
+module.exports = { getStats, getTransactions, getSortedTransactions }

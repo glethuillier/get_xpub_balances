@@ -1,9 +1,11 @@
 const chalk = require('chalk');
 
 const helpers = require('./helpers');
-const { Address, getAddress, checkXpub } = require('./address');
-const { AddressType, blockstreamAPI, MAX_EXPLORATION, ADDRESSES_PREGENERATION } = require('./settings');
-const { getTransactions } = require('./transactions')
+const display = require('./display');
+
+const { Address, getAddress } = require('./address');
+const { AddressType, MAX_EXPLORATION, ADDRESSES_PREGENERATION } = require('./settings');
+const { getStats, getTransactions } = require('./transactions')
 
 // Option 1: one arg -> xpub
 var args = process.argv.slice(2);
@@ -13,7 +15,8 @@ if (typeof args[0] === 'undefined') {
 }
 
 const xpub = args[0];
-checkXpub(xpub);
+
+helpers.checkXpub(xpub);
 const ownAddresses = generateOwnAddresses(xpub);
 
 var account, index;
@@ -25,7 +28,7 @@ if (typeof args[2] !== 'undefined') {
 
 // generate addresses associated with the xpub
 function generateOwnAddresses(xpub) {
-  helpers.transientLine(chalk.grey("pre-generating addresses..."));
+  display.transientLine(chalk.grey("pre-generating addresses..."));
 
   var external = [], internal = [];
 
@@ -41,7 +44,7 @@ function generateOwnAddresses(xpub) {
       }
   });
 
-  helpers.transientLine(/* delete line about addresses pre-generation */);
+  display.transientLine(/* delete line about addresses pre-generation */);
 
   return {
     external: external,
@@ -73,32 +76,11 @@ function getLegacyOrSegWitStats(xpub) {
   };
 }
 
-function getStats(address) {
-  const res = helpers.getJson(blockstreamAPI + address.toString());
-
-  const funded_sum = res.chain_stats.funded_txo_sum;
-  const spent_sum = res.chain_stats.spent_txo_sum;
-  const balance = funded_sum - spent_sum;
-
-  const stats = {
-    txs_count: res.chain_stats.tx_count,
-    funded: {
-      count: res.chain_stats.funded_txo_count,
-      sum: funded_sum
-    },
-    spent: {
-      count: res.chain_stats.spent_txo_count,
-      sum: spent_sum
-    }
-  }
-
-  address.setStats(stats);
-  address.setBalance(balance);
-}
-
 // scan all active addresses
 function scanAddresses(addressType, xpub) {
-  helpers.logStatus("Scanning ".concat(chalk.bold(addressType)).concat(" addresses..."));
+  const network = helpers.getNetwork(xpub);
+
+  display.logStatus("Scanning ".concat(chalk.bold(addressType)).concat(" addresses..."));
 
   var totalBalance = 0, noTxCounter = 0;
   var addresses = []
@@ -106,13 +88,13 @@ function scanAddresses(addressType, xpub) {
   for(var account = 0; account < 2; ++account) {
     const typeAccount = account == 0 ? "external" : "internal";
 
-    helpers.logStatus("- scanning " + chalk.italic(typeAccount) + " addresses -");
+    display.logStatus("- scanning " + chalk.italic(typeAccount) + " addresses -");
 
     noTxCounter = 0;
 
     for(var index = 0; index < 1000; ++index) {
-      const address = new Address(addressType, xpub, account, index)
-      helpers.displayAddress(address);
+      const address = new Address(network, addressType, xpub, account, index)
+      display.displayAddress(address);
 
       const status = noTxCounter === 0 ? "analyzing" : "probing address gap"
       process.stdout.write(chalk.yellow(status + "..."));
@@ -123,12 +105,12 @@ function scanAddresses(addressType, xpub) {
 
       if (addressStats.txs_count == 0) {
         noTxCounter++;
-        helpers.transientLine(/* delete address */);
+        display.transientLine(/* delete address */);
 
         if (account == 1 || noTxCounter >= MAX_EXPLORATION) {
           // TODO: extend logic to account numbers > 1
-          helpers.transientLine(/* delete last probing info */);
-          helpers.logStatus("- " + chalk.italic(typeAccount) + " addresses scanned -");
+          display.transientLine(/* delete last probing info */);
+          display.logStatus("- " + chalk.italic(typeAccount) + " addresses scanned -");
           break;
         }
 
@@ -154,7 +136,7 @@ function scanAddresses(addressType, xpub) {
         txsCount: addressStats.txs_count
       };
       
-      helpers.displayAddress(address);
+      display.displayAddress(address);
 
       address.setStats(tx);
 
@@ -162,7 +144,7 @@ function scanAddresses(addressType, xpub) {
     }
   }
 
-  helpers.logStatus(addressType.concat(" addresses scanned\n"));
+  display.logStatus(addressType.concat(" addresses scanned\n"));
 
   return {
     balance: totalBalance, // in satoshis
@@ -183,7 +165,7 @@ if (typeof(index) === 'undefined') {
   const nativeSegwit = scanAddresses(AddressType.NATIVE, xpub);
   updateSummary(summary, AddressType.NATIVE, nativeSegwit);
 
-  helpers.displaySortedAddresses(legacyOrSegwit.addresses.concat(nativeSegwit.addresses))
+  display.displaySortedAddresses(legacyOrSegwit.addresses.concat(nativeSegwit.addresses))
 }
 else {
   // Option B: an index has been provided:
@@ -198,7 +180,7 @@ else {
 
     getStats(address);
 
-    helpers.displayAddress(address);
+    display.displayAddress(address);
     
     updateSummary(summary, addressType, address);
   })
@@ -207,5 +189,5 @@ else {
 console.log(chalk.bold("\nSummary"));
 
 for (var [addressType, value] of summary.entries()) {
-  helpers.showSummary(addressType, value);
+  display.showSummary(addressType, value);
 }

@@ -1,10 +1,10 @@
-const { bitcoinAPI } = require('../settings');
+const { BITCOIN_API } = require('../settings');
 const helpers = require('../helpers');
 
 // returns the basic stats related to an address:
 // its balance, funded and spend sums and counts
 function getStats(address) {
-    const res = helpers.getJSON(bitcoinAPI + address.toString());
+    const res = helpers.getJSON(BITCOIN_API + address.toString());
   
     const funded_sum = res.chain_stats.funded_txo_sum;
     const spent_sum = res.chain_stats.spent_txo_sum;
@@ -31,7 +31,7 @@ function getStats(address) {
 // [ { blockHeight, txid, ins: [ { address, value }... ], outs: [ { address, value }...] } ]
 function getTxs(address) {
     // 1. fetch raw transactions
-    const url = bitcoinAPI.concat(address.toString()).concat("/txs");
+    const url = BITCOIN_API.concat(address.toString()).concat("/txs");
     const rawTxs = helpers.getJSON(url);
 
     // 2. parse raw transactions

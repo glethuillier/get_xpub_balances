@@ -1,12 +1,20 @@
 const AddressType = { LEGACY: "Legacy", NATIVE: "Native SegWit", SEGWIT: "SegWit", LEGACY_OR_SEGWIT: "Legacy/SegWit", ALL: "all"};
 Object.freeze(AddressType);
 
+// GENERAL
+// -------
+const VERBOSE = false;
+
+
+// CHECK BALANCES
+// --------------
+
 // blockstream API to retrieve stats related to a given address
 // (less rate limited than the blockchain.info one)
-const bitcoinAPI = 'https://blockstream.info/api/address/';
+const BITCOIN_API = 'https://blockstream.info/api/address/';
 
 // TODO(litecoin)
-const litecoinAPI = 'https://api.blockcypher.com/v1/ltc/main/addrs/'
+const LITECOIN_API = 'https://api.blockcypher.com/v1/ltc/main/addrs/'
 
 // max number of addresses to probe when checking a possible gap between derivation indices
 // (that is: range of indices not used for derivation)
@@ -15,8 +23,45 @@ const MAX_EXPLORATION = 20;
 // number of addresses to pre-generate (used for transactions analysis)
 const ADDRESSES_PREGENERATION = 2000;
 
-const VERBOSE = false;
 
+// XPUB <> ADDRESS COMPARISON
+// --------------------------
+
+// scope of the derivation for the comparison
+const DERIVATION_SCOPE = {
+  
+  // _quick search_
+  // the common range from which addresses
+  // are generally derived
+  quick_search: {
+    account: {
+      min: 0,
+      max: 4
+    },
+    index: {
+      min: 0,
+      max: 1000
+    }
+  },
+
+  // _deep search_
+  // an extended range for a deeper analysis,
+  // initiated when quick search fails
+  deep_search: {
+    account: {
+      min: 0,
+      max: 1000
+    },
+    index: {
+      min: 0,
+      max: 100000
+    }
+  }
+}
+
+
+// DERIVATION PARAMETERS
+// ---------------------
 
 const BITCOIN_NETWORK = {
     messagePrefix: '\x18Bitcoin Signed Message:\n',
@@ -45,10 +90,11 @@ const LITECOIN_NETWORK = {
 
 module.exports = { 
     AddressType, 
-    bitcoinAPI, 
+    BITCOIN_API, 
     MAX_EXPLORATION, 
     VERBOSE, 
     ADDRESSES_PREGENERATION,
     BITCOIN_NETWORK,
-    LITECOIN_NETWORK
+    LITECOIN_NETWORK,
+    DERIVATION_SCOPE
 }

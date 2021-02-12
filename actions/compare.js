@@ -1,5 +1,6 @@
 const { getAddressType, getAddress } = require('./address');
-const { showComparisonResult } = require('../display')
+const { showComparisonResult } = require('../display');
+const { DERIVATION_SCOPE } = require('../settings');
 
 const chalk = require('chalk');
 
@@ -24,8 +25,8 @@ function search(xpub, providedAddress, range) {
 
     const partialSearch = providedAddress.includes('?');
 
-    for (var account = range.account_min; account < range.account_max; ++account) {
-        for (var index = range.index_min; index < range.index_max; ++index) {
+    for (var account = range.account.min; account < range.account.max; ++account) {
+        for (var index = range.index.min; index < range.index.max; ++index) {
             const generatedAddress = getAddress(addressType, xpub, account, index);
 
             const derivationPath = 
@@ -35,7 +36,7 @@ function search(xpub, providedAddress, range) {
                     .concat(index)
             
             const status =
-                range.type.padEnd(18, ' ')
+                range.label.padEnd(18, ' ')
                     .concat(derivationPath.padEnd(14, ' '))
                     .concat(generatedAddress)
 
@@ -67,25 +68,17 @@ function search(xpub, providedAddress, range) {
 }
 
 function run(xpub, address) {
-    const quickSearchRange = {
-        type: 'quick search',
-        account_min: 0,
-        account_max: 4,
-        index_min: 0,
-        index_max: 1000
-    };
+    const quickSearchRange = DERIVATION_SCOPE.quick_search;
+
+    quickSearchRange.label = 'quick search';
 
     var result = search(xpub, address, quickSearchRange);
 
     if (Object.keys(result).length === 0) {
 
-        const deepSearchRange = {
-            type: 'deep search',
-            account_min: 0,
-            account_max: 1000,
-            index_min: 0,
-            index_max: 100000
-        };
+        const deepSearchRange = DERIVATION_SCOPE.deep_search;
+
+        deepSearchRange.label = 'deep search';
 
         result = search(xpub, address, deepSearchRange);
     }

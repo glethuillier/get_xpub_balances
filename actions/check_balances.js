@@ -25,7 +25,7 @@ function generateSampleOfDerivedAddresses(xpub) {
     });
   
     display.transientLine(/* delete line about addresses pre-generation */);
-  
+
     return {
       external: external,
       internal: internal,

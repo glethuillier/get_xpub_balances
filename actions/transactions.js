@@ -1,5 +1,6 @@
 const { VERBOSE, BITCOIN_NETWORK, LITECOIN_NETWORK } = require('../settings')
 const bitcoin = require('../coins/bitcoin')
+const litecoin = require('../coins/litecoin')
 
 function getStats(address) {
     switch(global.network) {
@@ -7,8 +8,7 @@ function getStats(address) {
             bitcoin.getStats(address);
             break;
         case LITECOIN_NETWORK:
-            // TODO(litecoin)
-            console.log('Not implemented yet');
+            litecoin.getStats(address);
             break;
     }
 }
@@ -29,8 +29,7 @@ function preprocessTransactions(address) {
             break;
         case LITECOIN_NETWORK:
             // TODO(litecoin)
-            console.log('Not implemented yet');
-            process.exit(1);
+            litecoin.getTxs(address);
             break;
     }
 }

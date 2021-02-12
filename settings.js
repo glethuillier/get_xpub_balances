@@ -1,3 +1,5 @@
+const coininfo = require('coininfo');
+
 // GENERAL
 // -------
 const VERBOSE = false;
@@ -58,30 +60,10 @@ const DERIVATION_SCOPE = {
 // DERIVATION PARAMETERS
 // ---------------------
 
-const BITCOIN_NETWORK = {
-  messagePrefix: '\x18Bitcoin Signed Message:\n',
-  bech32: 'bc',
-  bip32: {
-    public: 0x0488b21e,
-    private: 0x0488ade4,
-  },
-  pubKeyHash: 0x00,
-  scriptHash: 0x05,
-  wif: 0x80,
-};
+const BITCOIN_NETWORK = coininfo.bitcoin.main.toBitcoinJS()
 
 // TODO(litecoin)
-const LITECOIN_NETWORK = {
-  messagePrefix: '\x19Litecoin Signed Message:\n',
-  bech32: 'ltc',
-  bip32: {
-    public: 0x019da462,
-    private: 0x019d9cfe
-  },
-  pubKeyHash: 0x30,
-  scriptHash: 0x32,
-  wif: 0xb0
-}
+const LITECOIN_NETWORK = coininfo.litecoin.main.toBitcoinJS();
 
 
 const AddressType = { 
@@ -97,6 +79,7 @@ Object.freeze(AddressType);
 module.exports = { 
     AddressType, 
     BITCOIN_API, 
+    LITECOIN_API,
     MAX_EXPLORATION, 
     VERBOSE, 
     ADDRESSES_PREGENERATION,

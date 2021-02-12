@@ -25,9 +25,10 @@ function getJSON(url, attempts = 0) {
   const res = request('GET', url);
   
   if (res.statusCode != 200) {
-    transientLine(chalk.red('GET request error, retrying...'));
+    transientLine(chalk.red('GET request error'));
+    attempts++;
     sleep(1000).then(() => {
-      getJSON(url, attempts++);
+      getJSON(url, attempts);
     });
   }
   

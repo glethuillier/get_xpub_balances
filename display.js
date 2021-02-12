@@ -117,18 +117,25 @@ function transientLine(message) {
     }
   }
 
-function showComparisonResult(result) {
+function showComparisonResult(xpub, address, result) {
+
+  console.log("\nXpub:", chalk.whiteBright(xpub));
+  console.log("Address:", chalk.whiteBright(address));
+
   if (Object.keys(result).length === 0) {
     console.log(chalk.redBright(
       "The address does not seem to have been derived from this xpub!"
     ))
   }
   else {
-    console.log(chalk.greenBright(
-      "The address has been derived from this xpub using derivation path m/"
-        .concat(result.account)
+    const derivationPath = 
+      "m/".concat(result.account)
         .concat("/")
-        .concat(result.index)
+      .concat(result.index)
+
+    console.log(chalk.greenBright(
+      "The address has been derived from this xpub using derivation path "
+        .concat(chalk.bold(derivationPath))
     ))
   }
 }

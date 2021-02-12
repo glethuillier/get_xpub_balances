@@ -9,12 +9,13 @@ From an xpub, get the balances of Bitcoin legacy, native SegWit, and SegWit acco
 * Privacy Friendly: xpubs are not sent over the Internet: only their derived addresses are 
 * Derives specific addresses (by account+index) or all active ones
 * Supports legacy, SegWit, and Native Segwit
+* Search if a given address has been derived from an xpub
 
 ## Install
 
 `$ npm i`
 
-## Usage
+## Main usage: check balances
 
 ### Scan for a specific account and an index
 
@@ -32,13 +33,19 @@ _This is a slow process: please be patient_
 Example: 
 `$ node scan.js xpub6C...44dXs7p`
 
-### Docker
+## Additional usage: check address against xpub
+
+(Check if an address has been derived from an xpub)
+
+`$ node scan.js <xpub> <address>`
+
+## Docker
 
 Build
 `$ docker build -t xpubscan .`
 
 Run
-`$ docker run xpubscan <xpub>`
+`$ docker run xpubscan <xpub> [optional: <args>]`
 
 ## Output
 

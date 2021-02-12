@@ -18,7 +18,7 @@ function search(xpub, address, range) {
             
             const status =
                 range.type.padEnd(18, ' ')
-                    .concat(derivationPath.padEnd(10, ' '))
+                    .concat(derivationPath.padEnd(14, ' '))
                     .concat(generatedAddress)
 
             if (generatedAddress.toUpperCase() === address.toUpperCase()) {
@@ -64,7 +64,7 @@ function run(xpub, address) {
         result = search(xpub, address, deepSearchRange);
     }
 
-    showComparisonResult(result);
+    showComparisonResult(xpub, address, result);
 }
 
 module.exports = { run }

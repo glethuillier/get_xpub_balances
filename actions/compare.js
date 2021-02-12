@@ -1,11 +1,28 @@
 const { getAddressType, getAddress } = require('./address');
 const { showComparisonResult } = require('../display')
-var query = require('cli-interact').getYesNo;
 
 const chalk = require('chalk');
 
-function search(xpub, address, range) {
-    const addressType = getAddressType(address);
+function partialMatch(provided, derived) {
+    for(var i = 0; i < derived.length; ++i) {
+        const p = provided.toUpperCase()[i]
+
+        if (p == '?') {
+            continue;
+        }
+
+        if (p !== derived.toUpperCase()[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function search(xpub, providedAddress, range) {
+    const addressType = getAddressType(providedAddress);
+
+    const partialSearch = providedAddress.includes('?');
 
     for (var account = range.account_min; account < range.account_max; ++account) {
         for (var index = range.index_min; index < range.index_max; ++index) {
@@ -22,7 +39,7 @@ function search(xpub, address, range) {
                     .concat(derivationPath.padEnd(14, ' '))
                     .concat(generatedAddress)
 
-            if (generatedAddress.toUpperCase() === address.toUpperCase()) {
+            if (generatedAddress.toUpperCase() === providedAddress.toUpperCase()) {
 
                 console.log(chalk.green(status)); 
 
@@ -32,16 +49,13 @@ function search(xpub, address, range) {
                 }
             }
 
-            if (generatedAddress.toLocaleUpperCase().startsWith(address.toUpperCase())) {
+            if (partialSearch && partialMatch(providedAddress, generatedAddress)) {
                 console.log(chalk.blueBright(status));
-                const continueToSearch = query('Press enter to continue...');
                 
-                if (!continueToSearch) {
-                    return {
-                        partial: generatedAddress,
-                        account: account,
-                        index: index
-                    }
+                return {
+                    partial: generatedAddress,
+                    account: account,
+                    index: index
                 }
             }
 
@@ -53,8 +67,6 @@ function search(xpub, address, range) {
 }
 
 function run(xpub, address) {
-    const addressType = getAddressType(address);
-
     const quickSearchRange = {
         type: 'quick search',
         account_min: 0,

@@ -37,7 +37,13 @@ Example:
 
 (Check if an address has been derived from an xpub)
 
+### Perfect match
+
 `$ node scan.js <xpub> <address>`
+
+### Partial match
+
+Add '?' where you are uncertain about a character in the address. For instance: `1MYaYeZhDp?m3YtvqBMXQQN??YCz?7NqgF`
 
 ## Docker
 

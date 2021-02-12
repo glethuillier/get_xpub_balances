@@ -111,36 +111,36 @@ function processSentTransactions(address, ownAddresses) {
 // Sort transactions by block time
 // (reversed ordering)
 function getSortedTransactions(...addresses) {
-    
     var txs = [], processedTxs = [];
+
 
     [].concat.apply([], addresses).forEach(address => {
   
-      address.getFunded().forEach(tx => {
-        txs.push(
-          {
-            address: address,
-            amount: tx.amount,
-            blockHeight: tx.blockHeight,
-          }
-        )
-      });
-  
-      address.getSent().forEach(tx => {  
-        // only process a given txid once
-        if (!processedTxs.includes(tx.txid)) {
-  
-          txs.push(
+        address.funded.forEach(tx => {
+            txs.push(
             {
-              address: address,
-              amount: -1 * tx.amount, // make it a negative number
-              blockHeight: tx.blockHeight,
+                address: address,
+                amount: tx.amount,
+                blockHeight: tx.blockHeight,
             }
-          );
-  
-          processedTxs.push(tx.txid);
-        }
-      });
+            )
+        });
+    
+        address.sent.forEach(tx => {  
+            // only process a given txid once
+            if (!processedTxs.includes(tx.txid)) {
+    
+            txs.push(
+                {
+                address: address,
+                amount: -1 * tx.amount, // make it a negative number
+                blockHeight: tx.blockHeight,
+                }
+            );
+    
+            processedTxs.push(tx.txid);
+            }
+        });
       
     });
   

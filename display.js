@@ -71,7 +71,7 @@ function displaySortedAddresses(sortedAddresses) {
     })
   
     console.log(chalk.bold("\nNumber of transactions"));
-    console.log(chalk.whiteBright(txs.length))
+    console.log(chalk.whiteBright(sortedAddresses.length))
   }
   
   function showSummary(addressType, value) {

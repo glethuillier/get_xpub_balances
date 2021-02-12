@@ -3,7 +3,7 @@ const display = require('../display');
 const helpers = require('../helpers')
 const { Address, getAddress } = require('./address');
 const { AddressType, MAX_EXPLORATION, ADDRESSES_PREGENERATION } = require('../settings');
-const { getStats, getTransactions } = require('./transactions')
+const { getStats, getTransactions, getSortedTransactions } = require('./transactions')
 
 const chalk = require('chalk');
 
@@ -155,7 +155,7 @@ function run(xpub, account, index) {
      const nativeSegwit = scanAddresses(network, AddressType.NATIVE, xpub);
      updateSummary(summary, AddressType.NATIVE, nativeSegwit);
    
-     const sortedAddresses = getSortedTransactions(network, legacyOrSegwit.addresses, nativeSegwit.addresses);
+     const sortedAddresses = getSortedTransactions(legacyOrSegwit.addresses, nativeSegwit.addresses);
 
      display.displaySortedAddresses(sortedAddresses)
    }

@@ -1,5 +1,5 @@
-const { VERBOSE, BITCOIN_NETWORK, LITECOIN_NETWORK } = require('./settings')
-const bitcoin = require('./coins/bitcoin')
+const { VERBOSE, BITCOIN_NETWORK, LITECOIN_NETWORK } = require('../settings')
+const bitcoin = require('../coins/bitcoin')
 
 function getStats(address) {
     const network = address.getNetwork();
@@ -110,10 +110,11 @@ function processSentTransactions(address, ownAddresses) {
 
 // Sort transactions by block time
 // (reversed ordering)
-function getSortedTransactions(addresses) {
+function getSortedTransactions(...addresses) {
+    
     var txs = [], processedTxs = [];
 
-    addresses.forEach(address => {
+    [].concat.apply([], addresses).forEach(address => {
   
       address.getFunded().forEach(tx => {
         txs.push(

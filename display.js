@@ -2,8 +2,6 @@ var readline = require('readline');
 const chalk = require('chalk');
 const sb = require('satoshi-bitcoin');
 
-const { getSortedTransactions } = require('./transactions');
-
 function displayAddress(address) {
     const addressType = address.getType()
     const account = address.getDerivation().account
@@ -49,12 +47,10 @@ function displayAddress(address) {
     console.log(stats);
   }
 
-function displaySortedAddresses(addresses) {
+function displaySortedAddresses(sortedAddresses) {
     console.log(chalk.bold("\nTransactions History").concat(chalk.redBright(" (beta feature)")));
   
-    const txs = getSortedTransactions(addresses);
-  
-    txs.forEach(tx => {
+    sortedAddresses.forEach(tx => {
       const amount = String(sb.toBitcoin(tx.amount));
   
       status = 
@@ -121,10 +117,27 @@ function transientLine(message) {
     }
   }
 
+function showComparisonResult(result) {
+  if (Object.keys(result).length === 0) {
+    console.log(chalk.redBright(
+      "The address does not seem to have been derived from this xpub!"
+    ))
+  }
+  else {
+    console.log(chalk.greenBright(
+      "The address has been derived from this xpub using derivation path m/"
+        .concat(result.account)
+        .concat("/")
+        .concat(result.index)
+    ))
+  }
+}
+
 module.exports = {
     showSummary, 
     logStatus, 
     displayAddress, 
     displaySortedAddresses, 
-    transientLine 
+    transientLine,
+    showComparisonResult
 }

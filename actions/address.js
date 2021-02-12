@@ -1,8 +1,8 @@
 const bjs = require('bitcoinjs-lib');
 const bip32 = require('bip32');
 
-const { AddressType } = require('./settings');
-const { getNetwork } = require('./helpers');
+const { AddressType } = require('../settings');
+const { getNetwork } = require('../helpers');
 
 class Address {
     constructor(network, type, xpub, account, index) {
@@ -161,4 +161,4 @@ function getAddressType(address) {
     }
   }
 
-  module.exports = { Address, getAddress }
+  module.exports = { Address, getAddressType, getAddress }

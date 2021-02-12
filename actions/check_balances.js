@@ -1,6 +1,5 @@
 const display = require('../display');
 
-const helpers = require('../helpers')
 const { Address, getAddress } = require('./address');
 const { AddressType, MAX_EXPLORATION, ADDRESSES_PREGENERATION } = require('../settings');
 const { getStats, getTransactions, getSortedTransactions } = require('./transactions')
@@ -8,7 +7,7 @@ const { getStats, getTransactions, getSortedTransactions } = require('./transact
 const chalk = require('chalk');
 
 // generate addresses associated with the xpub
-function generateOwnAddresses(xpub) {
+function generateSampleOfDerivedAddresses(xpub) {
     display.transientLine(chalk.grey("pre-generating addresses..."));
   
     var external = [], internal = [];
@@ -40,16 +39,12 @@ function generateOwnAddresses(xpub) {
     }
     else {
       summary.get(addressType).balance += value.balance;
-      summary.get(addressType).addresses.concat(value.addresses);
     }
   }
   
-  function getLegacyOrSegWitStats(xpub) {
-    const ownAddresses = generateOwnAddresses(xpub);
-    const network = helpers.getNetwork(xpub);
-  
-    const legacy = scanAddresses(network, AddressType.LEGACY, xpub);
-    const segwit = scanAddresses(network, AddressType.SEGWIT, xpub);
+  function getLegacyOrSegWitStats(xpub, derivedAddresses) {
+    const legacy = scanAddresses(AddressType.LEGACY, xpub, derivedAddresses);
+    const segwit = scanAddresses(AddressType.SEGWIT, xpub, derivedAddresses);
   
     const totalBalance = legacy.balance + segwit.balance
   
@@ -60,9 +55,7 @@ function generateOwnAddresses(xpub) {
   }
 
 // scan all active addresses
-function scanAddresses(network, addressType, xpub) {
-    const ownAddresses = generateOwnAddresses(xpub);
-  
+function scanAddresses(addressType, xpub, derivedAddresses) {
     display.logStatus("Scanning ".concat(chalk.bold(addressType)).concat(" addresses..."));
   
     var totalBalance = 0, noTxCounter = 0;
@@ -76,8 +69,8 @@ function scanAddresses(network, addressType, xpub) {
       noTxCounter = 0;
   
       for(var index = 0; index < 1000; ++index) {
-        const address = new Address(network, addressType, xpub, account, index)
-        display.displayAddress(address);
+        const address = new Address(addressType, xpub, account, index)
+        display.updateAddressDetails(address);
   
         const status = noTxCounter === 0 ? "analyzing" : "probing address gap"
         process.stdout.write(chalk.yellow(status + "..."));
@@ -86,12 +79,12 @@ function scanAddresses(network, addressType, xpub) {
   
         const addressStats = address.getStats();
   
-        if (addressStats.txs_count == 0) {
+        if (addressStats.txs_count === 0) {
           noTxCounter++;
           display.transientLine(/* delete address */);
   
           if (account == 1 || noTxCounter >= MAX_EXPLORATION) {
-            // TODO: extend logic to account numbers > 1
+            // TODO?: extend logic to account numbers > 1
             display.transientLine(/* delete last probing info */);
             display.logStatus("- " + chalk.italic(typeAccount) + " addresses scanned -");
             break;
@@ -103,11 +96,11 @@ function scanAddresses(network, addressType, xpub) {
           noTxCounter = 0;
         }
   
-        getTransactions(address, ownAddresses);
+        getTransactions(address, derivedAddresses);
   
         totalBalance += address.getBalance();
   
-        var tx = {
+        const tx = {
           funded: {
             count: addressStats.funded.count,
             sum: addressStats.funded.sum,
@@ -119,7 +112,7 @@ function scanAddresses(network, addressType, xpub) {
           txsCount: addressStats.txs_count
         };
         
-        display.displayAddress(address);
+        display.updateAddressDetails(address);
   
         address.setStats(tx);
   
@@ -138,51 +131,55 @@ function scanAddresses(network, addressType, xpub) {
 
 function run(xpub, account, index) {
 
-  helpers.checkXpub(xpub);
-
-  const network = helpers.getNetwork(xpub);
-
   let summary = new Map();
   
   if (typeof(account) === 'undefined') {
+    // Option A: no index has been provided:
+    //  - retrieve stats for legacy/SegWit
+    //  - scan Native SegWit addresses
+
     console.log(chalk.bold("\nActive addresses"))
-     // Option A: no index has been provided:
-     //  - retrieve stats for legacy/SegWit
-     //  - scan Native SegWit addresses
-     const legacyOrSegwit = getLegacyOrSegWitStats(xpub);
-     updateSummary(summary, AddressType.LEGACY_OR_SEGWIT, legacyOrSegwit);
-   
-     const nativeSegwit = scanAddresses(network, AddressType.NATIVE, xpub);
-     updateSummary(summary, AddressType.NATIVE, nativeSegwit);
-   
-     const sortedAddresses = getSortedTransactions(legacyOrSegwit.addresses, nativeSegwit.addresses);
 
-     display.displaySortedAddresses(sortedAddresses)
-   }
-   else {
-     // Option B: an index has been provided:
-     // derive all addresses at that account and index; then
-     // check their respective balances
-     [
-       AddressType.LEGACY,
-       AddressType.SEGWIT,
-       AddressType.NATIVE
-     ].forEach(addressType => {
-       const address = new Address(network, addressType, xpub, account, index);
+    // a _meaningful_ sample of addresses derived from the xpub has 
+    // to be generated (once) to perform analysis of the transactions
+    const derivedAddresses = generateSampleOfDerivedAddresses(xpub);
 
-       getStats(address);
+    const legacyOrSegwit = getLegacyOrSegWitStats(xpub, derivedAddresses);
+    updateSummary(summary, AddressType.LEGACY_OR_SEGWIT, legacyOrSegwit);
+   
+    const nativeSegwit = scanAddresses(AddressType.NATIVE, xpub, derivedAddresses);
+    updateSummary(summary, AddressType.NATIVE, nativeSegwit);
+   
+    const sortedAddresses = getSortedTransactions(legacyOrSegwit.addresses, nativeSegwit.addresses);
+
+    display.displaySortedAddresses(sortedAddresses)
+  }
+  else {
+    // Option B: an index has been provided:
+    // derive all addresses at that account and index; then
+    // check their respective balances
+    [
+      AddressType.LEGACY,
+      AddressType.SEGWIT,
+      AddressType.NATIVE
+    ].forEach(addressType => {
+      const address = new Address(addressType, xpub, account, index);
+
+      display.updateAddressDetails(address);
+
+      getStats(address);
     
-       display.displayAddress(address);
+      display.updateAddressDetails(address);
         
-       updateSummary(summary, addressType, address);
-     })
-   }
+     updateSummary(summary, addressType, address);
+    })
+  }
     
-   console.log(chalk.bold("\nSummary"));
+  console.log(chalk.bold("\nSummary"));
     
-   for (var [addressType, value] of summary.entries()) {
-     display.showSummary(addressType, value);
-   }
+  for (var [addressType, value] of summary.entries()) {
+    display.showSummary(addressType, value);
+  }
 }
 
 module.exports = { run }

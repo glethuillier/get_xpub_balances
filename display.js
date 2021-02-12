@@ -2,7 +2,7 @@ var readline = require('readline');
 const chalk = require('chalk');
 const sb = require('satoshi-bitcoin');
 
-function displayAddress(address) {
+function updateAddressDetails(address) {
     const addressType = address.getType()
     const account = address.getDerivation().account
     const index = address.getDerivation().index
@@ -53,7 +53,7 @@ function displaySortedAddresses(sortedAddresses) {
     sortedAddresses.forEach(tx => {
       const amount = String(sb.toBitcoin(tx.amount));
   
-      status = 
+      var status = 
         chalk.grey(tx.blockHeight)
         .concat("\t")
         .concat(tx.address.toString())
@@ -154,7 +154,7 @@ function showComparisonResult(xpub, address, result) {
 module.exports = {
     showSummary, 
     logStatus, 
-    displayAddress, 
+    updateAddressDetails, 
     displaySortedAddresses, 
     transientLine,
     showComparisonResult

@@ -2,19 +2,13 @@ const bjs = require('bitcoinjs-lib');
 const bip32 = require('bip32');
 
 const { AddressType } = require('../settings');
-const { getNetwork } = require('../helpers');
 
 class Address {
-    constructor(network, type, xpub, account, index) {
-      this.network = network
+    constructor(type, xpub, account, index) {
       this.address = getAddress(type, xpub, account, index);
       this.type = type;
       this.account = account;
       this.index = index;
-    }
-
-    getNetwork() {
-      return this.network;
     }
 
     setTxs(txs) {
@@ -80,7 +74,7 @@ function getLegacyAddress(xpub, account, index) {
         .fromBase58(xpub)
         .derive(account)
         .derive(index).publicKey,
-      network: getNetwork(xpub)
+      network: global.network
     });
   
     return address;
@@ -93,7 +87,7 @@ function getLegacyAddress(xpub, account, index) {
           .fromBase58(xpub)
           .derive(account)
           .derive(index).publicKey,
-        network: getNetwork(xpub)
+        network: global.network
     });
   
     return address;
@@ -107,7 +101,7 @@ function getLegacyAddress(xpub, account, index) {
           .fromBase58(xpub)
           .derive(account)
           .derive(index).publicKey,
-        network: getNetwork(xpub)
+        network: global.network
       }),
     });
   

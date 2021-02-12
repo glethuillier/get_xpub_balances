@@ -43,15 +43,13 @@ Example:
 
 ### Partial match
 
-Add '?' where you are uncertain about a character in the address. For instance: `1MYaYeZhDp?m3YtvqBMXQQN??YCz?7NqgF`
+Add `?` where you are uncertain about a character in the address. For instance: `1MYaYeZhDp?m3YtvqBMXQQN??YCz?7NqgF`
 
 ## Docker
 
-Build
-`$ docker build -t xpubscan .`
+Build: `$ docker build -t xpubscan .`
 
-Run
-`$ docker run xpubscan <xpub> [optional: <args>]`
+Run: `$ docker run xpubscan <xpub> [optional: <args>]`
 
 ## Output
 

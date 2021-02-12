@@ -2,9 +2,7 @@ const { VERBOSE, BITCOIN_NETWORK, LITECOIN_NETWORK } = require('../settings')
 const bitcoin = require('../coins/bitcoin')
 
 function getStats(address) {
-    const network = address.getNetwork();
-
-    switch(network) {
+    switch(global.network) {
         case BITCOIN_NETWORK:
             bitcoin.getStats(address);
             break;
@@ -15,25 +13,24 @@ function getStats(address) {
     }
 }
 
-function getTransactions(address, ownAddresses) {
+function getTransactions(address, derivedAddresses) {
     preprocessTransactions(address);
     processFundedTransactions(address);
-    processSentTransactions(address, ownAddresses);
+    processSentTransactions(address, derivedAddresses);
 }
 
 // transforms raw transactions associated with an address
 // into an array of processed transactions:
 // [ { blockHeight, txid, ins: [ { address, value }... ], outs: [ { address, value }...] } ]
 function preprocessTransactions(address) {
-    const network = address.getNetwork();
-
-    switch(network) {
+    switch(global.network) {
         case BITCOIN_NETWORK:
             bitcoin.getTxs(address);
             break;
         case LITECOIN_NETWORK:
             // TODO(litecoin)
             console.log('Not implemented yet');
+            process.exit(1);
             break;
     }
 }
@@ -47,7 +44,7 @@ function processFundedTransactions(address) {
     }
 
     const txs = address.getTxs();
-    var funded = []
+    var funded = [];
 
     txs.forEach(tx => {
         tx.outs.forEach(out => {
@@ -70,11 +67,9 @@ function processFundedTransactions(address) {
 }
 
 // process amounts sent to relevant addresses
-function processSentTransactions(address, ownAddresses) {
+function processSentTransactions(address, derivedAddresses) {
     const txs = address.getTxs();
     var sent = []
-
-    //showTransactions(address)
 
     for(var i = 0; i < txs.length; ++i) {
         const tx = txs[i];
@@ -83,13 +78,13 @@ function processSentTransactions(address, ownAddresses) {
         const txid = tx.txid;
 
         // exclude addresses not present in txs ins
-        if (!ins.some(el => el.address === address.toString())) {
+        if (!ins.some(transaction => transaction.address === address.toString())) {
             continue;
         }
 
         outs.forEach(out => {
-            // exclude change addresses
-            if (!ownAddresses.internal.includes(out.address)) {
+            // exclude internal (i.e. change) addresses
+            if (!derivedAddresses.internal.includes(out.address)) {
                 sent.push({
                     txid: txid,
                     blockHeight: tx.blockHeight,
@@ -97,7 +92,7 @@ function processSentTransactions(address, ownAddresses) {
                 });
             }
 
-            // TODO: self (ownAddress.external)
+            // TODO: self-sent (derivedAddresses.external)
         })
     }
 
@@ -112,7 +107,6 @@ function processSentTransactions(address, ownAddresses) {
 // (reversed ordering)
 function getSortedTransactions(...addresses) {
     var txs = [], processedTxs = [];
-
 
     [].concat.apply([], addresses).forEach(address => {
   
@@ -152,6 +146,7 @@ function getSortedTransactions(...addresses) {
     return txs;
 }
 
+// eslint-disable-next-line no-unused-vars
 function showTransactions(address) {
     console.dir(address.getTxs(), { depth: null });
 }

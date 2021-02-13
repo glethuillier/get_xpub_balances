@@ -145,13 +145,13 @@ function getLegacyAddress(xpub, account, index) {
 
 // infer address type from its syntax
 function getAddressType(address) {
-    if (address.match('(bc1|ltc1).*')) {
+    if (address.match('^(bc1|ltc1).*')) {
       return AddressType.NATIVE;
     }
-    else if (address.match('(3|M).*')) {
+    else if (address.match('^(3|M).*')) {
       return AddressType.SEGWIT;
     }
-    else if (address.match('(1|L).*')) {
+    else if (address.match('^(1|L).*')) {
       return AddressType.LEGACY;
     }
     else {

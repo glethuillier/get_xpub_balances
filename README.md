@@ -1,49 +1,51 @@
-# Get balances from Xpub/Ltub
+# Xpub Scan
 
 ![XPUB](./logo.png)
 
-From an xpub (or Ltub), get the balances of Bitcoin or Litecoin legacy, native SegWit, and SegWit accounts.
+Given a master public key (xpub, Ltub, *etc.*), get the balances of its derived legacy, native SegWit, and SegWit addresses, or check whether an address has been derived from it.
+
+![Example](./demo_balance.gif)
 
 ## Features
 
-* Privacy Friendly: xpubs/ltubs are not sent over the Internet: only their derived addresses are 
+* Privacy Friendly: master public keys are never sent over the Internet: only their derived addresses are 
 * Derives specific addresses (by account+index) or all active ones
+* Search if a given address has been derived from a given master public key
 * Supports legacy, SegWit, and Native Segwit
-* Search if a given address has been derived from an xpub/ltub
 
 ## Install
 
 `$ npm i`
 
-## Main usage: check balances
+## Usage 1. Check Balances
 
-### Scan for a specific account and an index
+*In the following instructions, the generic `xpub` term is used to designate a master public key. It can be substituted with another type of supported public key, such as `Ltub` (Litecoin).*
+
+### Scan for a Specific Account and an Index
 
 `$ node scan.js <xpub> <account> <index>`
 
 Example: 
 `$ node scan.js xpub6C...44dXs7p 0 10` [addresses at account `0`, index `10`]
 
-### Scan all active addresses
-
-_This is a slow process: please be patient_
+### Scan All Active Addresses
 
 `$ node scan.js <xpub>`
 
 Example: 
 `$ node scan.js xpub6C...44dXs7p`
 
-## Additional usage: check address against xpub
+## Usage 2. Check Address Against Xpub
 
-(Check if an address has been derived from an xpub)
+*Check if an address has been derived from a master public key.*
 
-### Perfect match
+### Perfect Match
 
 `$ node scan.js <xpub> <address>`
 
-### Partial match
+### Partial Match
 
-Add `?` where you are uncertain about a character in the address. For instance: `1MYaYeZhDp?m3YtvqBMXQQN??YCz?7NqgF`
+Add `?` where there is uncertainty about a character in the address. For instance: `1MYaYeZhDp?m3YtvqBMXQQN??YCz?7NqgF`
 
 ## Docker
 
@@ -51,45 +53,16 @@ Build: `$ docker build -t xpubscan .`
 
 Run: `$ docker run xpubscan <xpub> [optional: <args>]`
 
-## Output
+## Operation Mode
 
-All relevant derived addresses are displayed with the corresponding balance _in bitcoins_. 
-
-## Operation mode
-
-The tool derives addresses from the xpub (by scanning by accounts and indices) and displays, if appropriate, each derived address with its correspond type (legacy, SegWit, or native Segwit), its current balance, as well as its funded and spent transactions (amount and count).
 
 ## Interface
 
+### Check Balance
 When an analysis is performed, 3 elements are displayed in the following order:
-* The analysis of each derived active address _(slow)_
-* The ordered transactions _(instantaneous)_
-* A summary: total number of transactions and total balance by address type _(instantaneous)_
+* The analysis of each derived active address (type, path, address, current balance, total in `←`, total out `→`)
+* The transactions ordered by date (date, block number, address, in `←` | out `→` | sent to self `↺`)
+* A summary: total number of transactions and total balance by address type
 
-### Addresses analysis part
-
-![interface 1](./interface_1.png)
-
-### Transactions and summary parts
-
-![interface 2](./interface_2.png)
-
-## Example 1: specific account and index
-
-Scan addresses derived from account `1` and index `46`:
-
-```
-$ node main.js xpub6CMDks...9N1gz1ZT 1 46
-  Legacy          m/1/46      1HCojkXWkZdKhUqaZUo42TFZJ2F51QgtXe            0.00009834      +0.00009834 ←
-  SegWit          m/1/46      3B4FPjNYUEs6Tq2qzky5b73duMu1np5vS6            0               +0          ←
-  Native SegWit   m/1/46      bc1qkx7e5t3vzyvnlj6euwqagds8zq53wqjx0gcn03    0               +0          ←
-
-Summary
-Legacy          0.00009834
-SegWit          0
-Native SegWit   0
-```
-
-## Example 2: full scan
-
-![Example](./full_example.png)
+### Xpub and Address Comparison
+The derived addresses are displayed during the analysis. Perfect matches are displayed in green (with the corresponding derivation path). Partial matches are displayed in blue (also with the derivation path). No matches are rendered in red.

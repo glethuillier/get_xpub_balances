@@ -1,10 +1,10 @@
 # Xpub Scan
 
-![XPUB](./logo.png)
+![XPUB](./doc/logo.png)
 
 Given a master public key (xpub, Ltub, *etc.*), get the balances of its derived legacy, native SegWit, and SegWit addresses, or check whether an address has been derived from it.
 
-![Example](./demo_balance.gif)
+![Example](./doc/demo_balance.gif)
 
 ## Features
 

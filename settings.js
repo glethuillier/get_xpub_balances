@@ -61,7 +61,6 @@ const DERIVATION_SCOPE = {
 
 const BITCOIN_NETWORK = coininfo.bitcoin.main.toBitcoinJS()
 
-// TODO(litecoin)
 const LITECOIN_NETWORK = coininfo.litecoin.main.toBitcoinJS();
 
 

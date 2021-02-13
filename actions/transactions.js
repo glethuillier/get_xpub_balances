@@ -28,7 +28,6 @@ function preprocessTransactions(address) {
             bitcoin.getTxs(address);
             break;
         case LITECOIN_NETWORK:
-            // TODO(litecoin)
             litecoin.getTxs(address);
             break;
     }
@@ -80,11 +79,10 @@ function processSentTransactions(address, derivedAddresses) {
                 sent.push({
                     txid: txid,
                     blockHeight: tx.blockHeight,
-                    amount: out.value
+                    amount: out.value,
+                    self: derivedAddresses.external.includes(out.address)
                 });
             }
-
-            // TODO: self-sent (derivedAddresses.external)
         })
     }
 
@@ -116,21 +114,22 @@ function getSortedTransactions(...addresses) {
             // only process a given txid once
             if (!processedTxs.includes(tx.txid)) {
     
-            txs.push(
-                {
-                address: address,
-                amount: -1 * tx.amount, // make it a negative number
-                blockHeight: tx.blockHeight,
-                }
-            );
+                txs.push(
+                    {
+                        address: address,
+                        amount: -1 * tx.amount, // make it a negative number
+                        blockHeight: tx.blockHeight,
+                        self: tx.self
+                    }
+                );
     
-            processedTxs.push(tx.txid);
+                processedTxs.push(tx.txid);
             }
         });
       
     });
   
-    // reverse chronological order (based on block time)
+    // reverse chronological order (based on block height)
     txs = txs.sort(function(a, b) {
       return b.blockHeight - a.blockHeight;
     });

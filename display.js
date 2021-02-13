@@ -66,14 +66,19 @@ function updateAddressDetails(address) {
     console.log(stats);
   }
 
-function displaySortedAddresses(sortedAddresses) {
-    console.log(chalk.bold("\nTransactions History").concat(chalk.redBright(" (beta feature)")));
+function displayTransactions(sortedAddresses) {
+    console.log(chalk.bold("Transactions History").concat(chalk.redBright(" (beta feature)\n")));
+
+    const header =
+      "block\t\taddress\t\t\t\t\treceived (←) or sent (→) to self (↺)";
+
+    console.log(chalk.grey(header));
   
     sortedAddresses.forEach(tx => {
       const amount = convertUnits(tx.amount);
   
       var status = 
-        chalk.grey(tx.blockHeight)
+        String(tx.blockHeight).padEnd(8, ' ')
         .concat("\t")
         .concat(tx.address.toString())
         .concat("\t")
@@ -82,6 +87,11 @@ function displaySortedAddresses(sortedAddresses) {
       if (amount >= 0) {
         status = status.concat(" ←");
       }
+      else if (tx.self) {
+        // send to non-change address belonging to
+        // the same xpub/ltub
+        status = status.concat(" ↺");
+      }
       else {
         status = status.concat(" →");
       }
@@ -89,7 +99,7 @@ function displaySortedAddresses(sortedAddresses) {
       console.log(status);
     })
   
-    console.log(chalk.bold("\nNumber of transactions"));
+    console.log(chalk.bold("\nNumber of transactions\n"));
     console.log(chalk.whiteBright(sortedAddresses.length))
   }
   
@@ -174,7 +184,7 @@ module.exports = {
     showSummary, 
     logStatus, 
     updateAddressDetails, 
-    displaySortedAddresses, 
+    displayTransactions, 
     transientLine,
     showComparisonResult
 }

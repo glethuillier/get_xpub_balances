@@ -147,7 +147,7 @@ function run(xpub, account, index) {
     //  - retrieve stats for legacy/SegWit
     //  - scan Native SegWit addresses
 
-    console.log(chalk.bold("\nActive addresses"))
+    console.log(chalk.bold("\nActive addresses\n"))
 
     // a _meaningful_ sample of addresses derived from the xpub has 
     // to be generated (once) to perform analysis of the transactions
@@ -161,7 +161,7 @@ function run(xpub, account, index) {
    
     const sortedAddresses = getSortedTransactions(legacyOrSegwit.addresses, nativeSegwit.addresses);
 
-    display.displaySortedAddresses(sortedAddresses)
+    display.displayTransactions(sortedAddresses)
   }
   else {
     // Option B: an index has been provided:
@@ -184,7 +184,7 @@ function run(xpub, account, index) {
     })
   }
     
-  console.log(chalk.bold("\nSummary"));
+  console.log(chalk.bold("\nSummary\n"));
     
   for (var [addressType, value] of summary.entries()) {
     display.showSummary(addressType, value);

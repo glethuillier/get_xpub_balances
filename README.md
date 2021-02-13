@@ -6,6 +6,8 @@ Given a master public key (xpub, tlub), get the balances of its derived legacy, 
 
 ## Features
 
+![Example](./demo_balance.gif)
+
 * Privacy Friendly: master public keys are never sent over the Internet: only their derived addresses are 
 * Derives specific addresses (by account+index) or all active ones
 * Search if a given address has been derived from a given master public key
@@ -58,18 +60,6 @@ The tool derives addresses from the master public key (by scanning by accounts a
 ## Interface
 
 When an analysis is performed, 3 elements are displayed in the following order:
-* The analysis of each derived active address _(quite slow)_
-* The transactions ordered by date _(instantaneous)_
-* A summary: total number of transactions and total balance by address type _(instantaneous)_
-
-### Addresses analysis part
-
-![interface 1](./interface_1.png)
-
-### Transactions and summary parts
-
-![interface 2](./interface_2.png)
-
-## Example: Full Scan
-
-![Example](./demo_balance.gif)
+* The analysis of each derived active address (type, path, address, current balance, total in `←`, total out `→`)
+* The transactions ordered by date (date, block number, address, in `←` | out `→` | sent to self `↺`)
+* A summary: total number of transactions and total balance by address type

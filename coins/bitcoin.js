@@ -42,8 +42,6 @@ function getTxs(address) {
     var txs = [];
 
     rawTxs.forEach(tx => {
-        const blockHeight = tx.block_no;
-
         var ins = [], outs = [];
 
         if (typeof(tx.incoming) !== 'undefined') {   
@@ -65,7 +63,8 @@ function getTxs(address) {
         }
 
         txs.push({
-            blockHeight: blockHeight,
+            blockHeight: tx.block_no,
+            time: tx.time,
             txid: tx.txid,
             ins: ins,
             outs: outs

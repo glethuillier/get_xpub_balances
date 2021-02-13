@@ -1,4 +1,5 @@
-var readline = require('readline');
+const readline = require('readline');
+const dateFormat = require("dateformat");
 const chalk = require('chalk');
 //const sb = require('satoshi-bitcoin');
 
@@ -20,6 +21,10 @@ function convertUnits(amount) {
     // 8 digital places max without trailing 0s
     return String(parseFloat(amount.toFixed(8)));
   }
+}
+
+function convertTime(time) {
+  return dateFormat(new Date(time * 1000), "yyyy-mm-dd HH:MM:ss")
 }
 
 function updateAddressDetails(address) {
@@ -70,7 +75,7 @@ function displayTransactions(sortedAddresses) {
     console.log(chalk.bold("Transactions History").concat(chalk.redBright(" (beta feature)\n")));
 
     const header =
-      "block\t\taddress\t\t\t\t\treceived (←) or sent (→) to self (↺)";
+      "time\t\t\tblock\t\taddress\t\t\t\t\treceived (←) or sent (→) to self (↺)";
 
     console.log(chalk.grey(header));
   
@@ -78,7 +83,9 @@ function displayTransactions(sortedAddresses) {
       const amount = convertUnits(tx.amount);
   
       var status = 
-        String(tx.blockHeight).padEnd(8, ' ')
+        convertTime(tx.time).padEnd(8, ' ')
+        .concat("\t")
+        .concat(String(tx.blockHeight).padEnd(8, ' '))
         .concat("\t")
         .concat(tx.address.toString())
         .concat("\t")

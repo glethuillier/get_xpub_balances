@@ -49,6 +49,7 @@ function processFundedTransactions(address) {
             funded.push({
                 txid: tx.txid,
                 blockHeight: tx.blockHeight,
+                time: tx.time,
                 amount: tx.ins[0].value
             });
         }
@@ -79,6 +80,7 @@ function processSentTransactions(address, derivedAddresses) {
                 sent.push({
                     txid: txid,
                     blockHeight: tx.blockHeight,
+                    time: tx.time,
                     amount: out.value,
                     self: derivedAddresses.external.includes(out.address)
                 });
@@ -106,6 +108,7 @@ function getSortedTransactions(...addresses) {
                 address: address,
                 amount: tx.amount,
                 blockHeight: tx.blockHeight,
+                time: tx.time
             }
             )
         });
@@ -119,6 +122,7 @@ function getSortedTransactions(...addresses) {
                         address: address,
                         amount: -1 * tx.amount, // make it a negative number
                         blockHeight: tx.blockHeight,
+                        time: tx.time,
                         self: tx.self
                     }
                 );
@@ -129,9 +133,9 @@ function getSortedTransactions(...addresses) {
       
     });
   
-    // reverse chronological order (based on block height)
+    // reverse chronological order
     txs = txs.sort(function(a, b) {
-      return b.blockHeight - a.blockHeight;
+      return b.time - a.time;
     });
 
     return txs;

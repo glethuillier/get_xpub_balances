@@ -28,130 +28,130 @@ function convertTime(time) {
 }
 
 function updateAddressDetails(address) {
-    const addressType = address.getType()
-    const account = address.getDerivation().account
-    const index = address.getDerivation().index
+  const addressType = address.getType()
+  const account = address.getDerivation().account
+  const index = address.getDerivation().index
   
-    const derivationPath = String("m/".concat(account).concat("/").concat(index));
-    const addressStats = address.getStats();
+  const derivationPath = String("m/".concat(account).concat("/").concat(index));
+  const addressStats = address.getStats();
   
-    // _type_  path  address ...
-    var stats = 
-      chalk.italic("  " + addressType.padEnd(16, ' '))
-        .concat(derivationPath.padEnd(12, ' '))
-        .concat(address.toString().padEnd(46, ' '))
+  // _type_  path  address ...
+  var stats = 
+  chalk.italic("  " + addressType.padEnd(16, ' '))
+  .concat(derivationPath.padEnd(12, ' '))
+  .concat(address.toString().padEnd(46, ' '))
   
-    if (typeof(address.getStats()) === 'undefined') {
-      process.stdout.write(stats)
-      return;
-    }
-    else {
-      const balance = convertUnits(address.getBalance());
-      const fundedSum = convertUnits(addressStats.funded.sum);
-  
-      transientLine(/* delete line to display complete info */);
-  
-      stats = 
-        stats
-          .concat(balance.padEnd(16, ' '))
-          .concat("+").concat(fundedSum.padEnd(10, ' ')).concat(" ←");
-    }
-  
-    // optional: spent sum
-    if (typeof(addressStats.spent) !== 'undefined' && addressStats.spent.sum > 0) {
-      const spentSum = convertUnits(addressStats.spent.sum);
-  
-      stats =
-        stats
-          .concat("\t-")
-          .concat(spentSum.padEnd(10, ' '))
-          .concat(" →");
-    }
-  
-    console.log(stats);
+  if (typeof(address.getStats()) === 'undefined') {
+    process.stdout.write(stats)
+    return;
   }
+  else {
+    const balance = convertUnits(address.getBalance());
+    const fundedSum = convertUnits(addressStats.funded.sum);
+    
+    transientLine(/* delete line to display complete info */);
+    
+    stats = 
+    stats
+    .concat(balance.padEnd(16, ' '))
+    .concat("+").concat(fundedSum.padEnd(10, ' ')).concat(" ←");
+  }
+  
+  // optional: spent sum
+  if (typeof(addressStats.spent) !== 'undefined' && addressStats.spent.sum > 0) {
+    const spentSum = convertUnits(addressStats.spent.sum);
+    
+    stats =
+    stats
+    .concat("\t-")
+    .concat(spentSum.padEnd(10, ' '))
+    .concat(" →");
+  }
+  
+  console.log(stats);
+}
 
 function displayTransactions(sortedAddresses) {
-    console.log(chalk.bold("Transactions History").concat(chalk.redBright(" (beta feature)\n")));
-
-    const header =
-      "time\t\t\tblock\t\taddress\t\t\t\t\treceived (←) or sent (→) to self (↺)";
-
-    console.log(chalk.grey(header));
+  console.log(chalk.bold("Transactions History").concat(chalk.redBright(" (beta feature)\n")));
   
-    sortedAddresses.forEach(tx => {
-      const amount = convertUnits(tx.amount);
+  const header =
+  "time\t\t\tblock\t\taddress\t\t\t\t\treceived (←) or sent (→) to self (↺)";
   
-      var status = 
-        convertTime(tx.time).padEnd(8, ' ')
-        .concat("\t")
-        .concat(String(tx.blockHeight).padEnd(8, ' '))
-        .concat("\t")
-        .concat(tx.address.toString())
-        .concat("\t")
-        .concat(amount.padEnd(12, ' '))
+  console.log(chalk.grey(header));
   
-      if (amount >= 0) {
-        status = status.concat(" ←");
-      }
-      else if (tx.self) {
-        // send to non-change address belonging to
-        // the same xpub/ltub
-        status = status.concat(" ↺");
-      }
-      else {
-        status = status.concat(" →");
-      }
-  
-      console.log(status);
-    })
-  
-    console.log(chalk.bold("\nNumber of transactions\n"));
-    console.log(chalk.whiteBright(sortedAddresses.length))
-  }
-  
-  function showSummary(addressType, value) {
-    const balance = convertUnits(value.balance);
+  sortedAddresses.forEach(tx => {
+    const amount = convertUnits(tx.amount);
     
-    if (balance === '0') {
-      console.log(
-        chalk.grey(
-          addressType.padEnd(16, ' ')
-            .concat(balance.padEnd(12, ' '))
-        )
-      );
+    var status = 
+    convertTime(tx.time).padEnd(8, ' ')
+    .concat("\t")
+    .concat(String(tx.blockHeight).padEnd(8, ' '))
+    .concat("\t")
+    .concat(tx.address.toString())
+    .concat("\t")
+    .concat(amount.padEnd(12, ' '))
+    
+    if (amount >= 0) {
+      status = status.concat(" ←");
+    }
+    else if (tx.self) {
+      // send to non-change address belonging to
+      // the same xpub/ltub
+      status = status.concat(" ↺");
     }
     else {
-      console.log(
-        chalk.whiteBright(
-          addressType.padEnd(16, ' ')
-        )
-        .concat(
-          chalk.greenBright(balance.padEnd(12, ' '))
-        )
-      );
+      status = status.concat(" →");
     }
-  }
+    
+    console.log(status);
+  })
   
-  function logStatus(status) {
-    console.log(chalk.dim(status));
+  console.log(chalk.bold("\nNumber of transactions\n"));
+  console.log(chalk.whiteBright(sortedAddresses.length))
+}
+  
+function showSummary(addressType, value) {
+  const balance = convertUnits(value.balance);
+    
+  if (balance === '0') {
+  console.log(
+      chalk.grey(
+        addressType.padEnd(16, ' ')
+          .concat(balance.padEnd(12, ' '))
+      )
+    );
   }
+  else {
+    console.log(
+      chalk.whiteBright(
+       addressType.padEnd(16, ' ')
+      )
+    .concat(
+        chalk.greenBright(balance.padEnd(12, ' '))
+      )
+    );
+  }
+}
+  
+function logStatus(status) {
+  console.log(chalk.dim(status));
+}
 
 // overwrite last displayed line
 // (no message: delete the line)
 function transientLine(message) {
-    readline.cursorTo(process.stdout, 0);
+  readline.cursorTo(process.stdout, 0);
   
-    if (typeof(message) !== 'undefined') {
-      process.stdout.write(message);
-    }
-    else {
-      // blank line
-      // (solution compatible with Docker)
-      process.stdout.write("".padEnd(100, ' '));
-      readline.cursorTo(process.stdout, 0);
-    }
+  if (typeof(message) !== 'undefined') {
+    process.stdout.write(message);
   }
+  else {
+    // blank line
+    // (solution compatible with Docker)
+    process.stdout.write("".padEnd(100, ' '));
+    readline.cursorTo(process.stdout, 0);
+  }
+}
 
 function showComparisonResult(xpub, address, result) {
 

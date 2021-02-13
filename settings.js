@@ -39,7 +39,7 @@ const DERIVATION_SCOPE = {
       max: 1000
     }
   },
-
+  
   // _deep search_
   // an extended range for a deeper analysis,
   // initiated when quick search fails
@@ -71,17 +71,17 @@ const AddressType = {
   LEGACY_OR_SEGWIT: "Legacy/SegWit",
   ALL: "All"
 };
-  
+
 Object.freeze(AddressType);
 
 module.exports = { 
-    AddressType, 
-    BITCOIN_API, 
-    LITECOIN_API,
-    MAX_EXPLORATION, 
-    VERBOSE, 
-    ADDRESSES_PREGENERATION,
-    BITCOIN_NETWORK,
-    LITECOIN_NETWORK,
-    DERIVATION_SCOPE
+  AddressType, 
+  BITCOIN_API, 
+  LITECOIN_API,
+  MAX_EXPLORATION, 
+  VERBOSE, 
+  ADDRESSES_PREGENERATION,
+  BITCOIN_NETWORK,
+  LITECOIN_NETWORK,
+  DERIVATION_SCOPE
 }

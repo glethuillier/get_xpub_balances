@@ -5,11 +5,11 @@ const litecoin = require('../coins/litecoin')
 function getStats(address) {
     switch(global.network) {
         case BITCOIN_NETWORK:
-            bitcoin.getStats(address);
-            break;
+        bitcoin.getStats(address);
+        break;
         case LITECOIN_NETWORK:
-            litecoin.getStats(address);
-            break;
+        litecoin.getStats(address);
+        break;
     }
 }
 
@@ -25,11 +25,11 @@ function getTransactions(address, derivedAddresses) {
 function preprocessTransactions(address) {
     switch(global.network) {
         case BITCOIN_NETWORK:
-            bitcoin.getTxs(address);
-            break;
+        bitcoin.getTxs(address);
+        break;
         case LITECOIN_NETWORK:
-            litecoin.getTxs(address);
-            break;
+        litecoin.getTxs(address);
+        break;
     }
 }
 
@@ -40,10 +40,10 @@ function processFundedTransactions(address) {
         address.setFunded([]);
         return;
     }
-
+    
     const txs = address.getTxs();
     var funded = [];
-
+    
     txs.forEach(tx => {
         if (typeof(tx.ins) !== 'undefined' && tx.ins.length > 0) {
             funded.push({
@@ -54,9 +54,9 @@ function processFundedTransactions(address) {
             });
         }
     })
-
+    
     address.setFunded(funded);
-
+    
     if (VERBOSE) {
         console.log('FUNDED\t', address.getFunded());
     }
@@ -65,15 +65,15 @@ function processFundedTransactions(address) {
 // process amounts sent to relevant addresses
 function processSentTransactions(address, derivedAddresses) {
     const txs = address.getTxs();
-
+    
     var sent = [];
-
+    
     for(var i = 0; i < txs.length; ++i) {
         const tx = txs[i];
         //const ins = tx.ins;
         const outs = tx.outs;
         const txid = tx.txid;
-
+        
         outs.forEach(out => {
             // exclude internal (i.e. change) addresses
             if (!derivedAddresses.internal.includes(out.address)) {
@@ -87,9 +87,9 @@ function processSentTransactions(address, derivedAddresses) {
             }
         })
     }
-
+    
     address.setSent(sent);
-
+    
     if (VERBOSE) {
         console.log('SENT\t', address.getSent());
     }

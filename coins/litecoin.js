@@ -11,21 +11,21 @@ const helpers = require('../helpers');
 function getStats(address) {
     const url = LITECOIN_API.concat(address.toString());
     const res = helpers.getJSON(url);
-  
+    
     const funded_sum = parseFloat(res.data.received_value);
     const balance = parseFloat(res.data.balance);
     const spent_sum = funded_sum - balance;
-
+    
     const stats = {
-      txs_count: res.data.total_txs,
-      funded: {
-        sum: funded_sum
-      },
-      spent: {
-        sum: spent_sum
-      }
+        txs_count: res.data.total_txs,
+        funded: {
+            sum: funded_sum
+        },
+        spent: {
+            sum: spent_sum
+        }
     }
-  
+    
     address.setStats(stats);
     address.setBalance(balance);
     address.setRawTxs(res.data.txs);
@@ -37,13 +37,13 @@ function getStats(address) {
 function getTxs(address) {
     // 1. get raw transactions
     const rawTxs = address.getRawTxs();
-
+    
     // 2. parse raw transactions
     var txs = [];
-
+    
     rawTxs.forEach(tx => {
         var ins = [], outs = [];
-
+        
         if (typeof(tx.incoming) !== 'undefined') {   
             tx.incoming.inputs.forEach(vin => {       
                 ins.push({
@@ -52,7 +52,7 @@ function getTxs(address) {
                 })
             })
         }
-
+        
         if (typeof(tx.outgoing) !== 'undefined') {
             tx.outgoing.outputs.forEach(vout => {     
                 outs.push({
@@ -61,7 +61,7 @@ function getTxs(address) {
                 })
             })
         }
-
+        
         txs.push({
             blockHeight: tx.block_no,
             time: tx.time,
@@ -69,9 +69,9 @@ function getTxs(address) {
             ins: ins,
             outs: outs
         })
-
+        
     });
-
+    
     address.setTxs(txs);
 }
 

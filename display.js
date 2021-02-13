@@ -96,7 +96,7 @@ function displaySortedAddresses(sortedAddresses) {
   function showSummary(addressType, value) {
     const balance = convertUnits(value.balance);
     
-    if (balance === 0) {
+    if (balance === '0') {
       console.log(
         chalk.grey(
           addressType.padEnd(16, ' ')

@@ -1,21 +1,23 @@
-# Get balances from Xpub/Ltub
+# Xpub Scan
 
 ![XPUB](./logo.png)
 
-From an xpub (or Ltub), get the balances of Bitcoin or Litecoin legacy, native SegWit, and SegWit accounts.
+Given a master public key (xpub, tlub), get the balances of its derived legacy, native SegWit, and SegWit addresses, or check whether an address has been derived from it.
 
 ## Features
 
-* Privacy Friendly: xpubs/ltubs are not sent over the Internet: only their derived addresses are 
+* Privacy Friendly: master public keys are never sent over the Internet: only their derived addresses are 
 * Derives specific addresses (by account+index) or all active ones
+* Search if a given address has been derived from a given master public key
 * Supports legacy, SegWit, and Native Segwit
-* Search if a given address has been derived from an xpub/ltub
 
 ## Install
 
 `$ npm i`
 
-## Main usage: check balances
+## Usage 1. Check balances
+
+*In the following instructions, the generic `xpub` term is used to designate a master public key. It can be substituted with another type of supported public key, such as `Ltub` (Litecoin).*
 
 ### Scan for a specific account and an index
 
@@ -26,16 +28,14 @@ Example:
 
 ### Scan all active addresses
 
-_This is a slow process: please be patient_
-
 `$ node scan.js <xpub>`
 
 Example: 
 `$ node scan.js xpub6C...44dXs7p`
 
-## Additional usage: check address against xpub
+## Usage 2. Check address against xpub
 
-(Check if an address has been derived from an xpub)
+*Check if an address has been derived from a master public key.*
 
 ### Perfect match
 
@@ -43,7 +43,7 @@ Example:
 
 ### Partial match
 
-Add `?` where you are uncertain about a character in the address. For instance: `1MYaYeZhDp?m3YtvqBMXQQN??YCz?7NqgF`
+Add `?` where there is uncertainty about a character in the address. For instance: `1MYaYeZhDp?m3YtvqBMXQQN??YCz?7NqgF`
 
 ## Docker
 
@@ -51,19 +51,15 @@ Build: `$ docker build -t xpubscan .`
 
 Run: `$ docker run xpubscan <xpub> [optional: <args>]`
 
-## Output
-
-All relevant derived addresses are displayed with the corresponding balance _in bitcoins_. 
-
 ## Operation mode
 
-The tool derives addresses from the xpub (by scanning by accounts and indices) and displays, if appropriate, each derived address with its correspond type (legacy, SegWit, or native Segwit), its current balance, as well as its funded and spent transactions (amount and count).
+The tool derives addresses from the master public key (by scanning by accounts and indices) and displays, if appropriate, each derived address with its correspond type (legacy, SegWit, or native Segwit), its current balance, as well as its funded and spent transactions (amount and count).
 
 ## Interface
 
 When an analysis is performed, 3 elements are displayed in the following order:
-* The analysis of each derived active address _(slow)_
-* The ordered transactions _(instantaneous)_
+* The analysis of each derived active address _(quite slow)_
+* The transactions ordered by date _(instantaneous)_
 * A summary: total number of transactions and total balance by address type _(instantaneous)_
 
 ### Addresses analysis part

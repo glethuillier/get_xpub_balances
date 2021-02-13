@@ -25,7 +25,7 @@ function generateSampleOfDerivedAddresses(xpub) {
     });
   
     display.transientLine(/* delete line about addresses pre-generation */);
-  
+
     return {
       external: external,
       internal: internal,
@@ -123,7 +123,7 @@ function scanAddresses(addressType, xpub, derivedAddresses) {
     display.logStatus(addressType.concat(" addresses scanned\n"));
   
     return {
-      balance: totalBalance, // in satoshis
+      balance: totalBalance,
       addresses: addresses
     }
   }

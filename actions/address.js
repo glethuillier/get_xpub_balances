@@ -14,6 +14,10 @@ class Address {
     setTxs(txs) {
       this.txs = txs;
     }
+
+    setRawTxs(rawTxs) {
+      this.rawTxs = rawTxs;
+    }
   
     setBalance(balance) {
         this.balance = balance;
@@ -65,13 +69,17 @@ class Address {
     getTxs() {
       return this.txs;
     }
+
+    getRawTxs() {
+      return this.rawTxs;
+    }
   }
 
 // derive legacy address at account and index positions
 function getLegacyAddress(xpub, account, index) {
     const { address } = bjs.payments.p2pkh({
       pubkey: bip32
-        .fromBase58(xpub)
+        .fromBase58(xpub, global.network)
         .derive(account)
         .derive(index).publicKey,
       network: global.network
@@ -84,7 +92,7 @@ function getLegacyAddress(xpub, account, index) {
   function getNativeSegWitAddress(xpub, account, index) {
     const { address } = bjs.payments.p2wpkh({
         pubkey: bip32
-          .fromBase58(xpub)
+          .fromBase58(xpub, global.network)
           .derive(account)
           .derive(index).publicKey,
         network: global.network
@@ -98,7 +106,7 @@ function getLegacyAddress(xpub, account, index) {
     const { address } = bjs.payments.p2sh({
       redeem: bjs.payments.p2wpkh({
         pubkey: bip32
-          .fromBase58(xpub)
+          .fromBase58(xpub, global.network)
           .derive(account)
           .derive(index).publicKey,
         network: global.network

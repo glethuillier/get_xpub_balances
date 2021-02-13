@@ -2,6 +2,17 @@ var readline = require('readline');
 const chalk = require('chalk');
 const sb = require('satoshi-bitcoin');
 
+const { BITCOIN_NETWORK } = require('./settings')
+
+function convertUnits(amount) {
+  if (global.network === BITCOIN_NETWORK) {
+    return String(sb.toBitcoin(amount));
+  }
+  else {
+    return String(amount);
+  }
+}
+
 function updateAddressDetails(address) {
     const addressType = address.getType()
     const account = address.getDerivation().account
@@ -22,8 +33,8 @@ function updateAddressDetails(address) {
       return;
     }
     else {
-      const balance = String(sb.toBitcoin(address.getBalance()));
-      const fundedSum = String(sb.toBitcoin(addressStats.funded.sum));
+      const balance = convertUnits(address.getBalance());
+      const fundedSum = convertUnits(addressStats.funded.sum);
   
       transientLine(/* delete line to display complete info */);
   
@@ -35,7 +46,7 @@ function updateAddressDetails(address) {
   
     // optional: spent sum
     if (typeof(addressStats.spent) !== 'undefined' && addressStats.spent.sum > 0) {
-      const spentSum = String(sb.toBitcoin(addressStats.spent.sum));
+      const spentSum = convertUnits(addressStats.spent.sum);
   
       stats =
         stats
@@ -51,7 +62,7 @@ function displaySortedAddresses(sortedAddresses) {
     console.log(chalk.bold("\nTransactions History").concat(chalk.redBright(" (beta feature)")));
   
     sortedAddresses.forEach(tx => {
-      const amount = String(sb.toBitcoin(tx.amount));
+      const amount = convertUnits(tx.amount);
   
       var status = 
         chalk.grey(tx.blockHeight)
@@ -75,7 +86,7 @@ function displaySortedAddresses(sortedAddresses) {
   }
   
   function showSummary(addressType, value) {
-    const balance = String(sb.toBitcoin(value.balance));
+    const balance = convertUnits(value.balance);
     
     if (balance == 0) {
       console.log(

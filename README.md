@@ -2,11 +2,11 @@
 
 ![XPUB](./logo.png)
 
-Given a master public key (xpub, tlub), get the balances of its derived legacy, native SegWit, and SegWit addresses, or check whether an address has been derived from it.
-
-## Features
+Given a master public key (xpub, Ltub, *etc.*), get the balances of its derived legacy, native SegWit, and SegWit addresses, or check whether an address has been derived from it.
 
 ![Example](./demo_balance.gif)
+
+## Features
 
 * Privacy Friendly: master public keys are never sent over the Internet: only their derived addresses are 
 * Derives specific addresses (by account+index) or all active ones
@@ -17,33 +17,33 @@ Given a master public key (xpub, tlub), get the balances of its derived legacy, 
 
 `$ npm i`
 
-## Usage 1. Check balances
+## Usage 1. Check Balances
 
 *In the following instructions, the generic `xpub` term is used to designate a master public key. It can be substituted with another type of supported public key, such as `Ltub` (Litecoin).*
 
-### Scan for a specific account and an index
+### Scan for a Specific Account and an Index
 
 `$ node scan.js <xpub> <account> <index>`
 
 Example: 
 `$ node scan.js xpub6C...44dXs7p 0 10` [addresses at account `0`, index `10`]
 
-### Scan all active addresses
+### Scan All Active Addresses
 
 `$ node scan.js <xpub>`
 
 Example: 
 `$ node scan.js xpub6C...44dXs7p`
 
-## Usage 2. Check address against xpub
+## Usage 2. Check Address Against Xpub
 
 *Check if an address has been derived from a master public key.*
 
-### Perfect match
+### Perfect Match
 
 `$ node scan.js <xpub> <address>`
 
-### Partial match
+### Partial Match
 
 Add `?` where there is uncertainty about a character in the address. For instance: `1MYaYeZhDp?m3YtvqBMXQQN??YCz?7NqgF`
 
@@ -53,13 +53,16 @@ Build: `$ docker build -t xpubscan .`
 
 Run: `$ docker run xpubscan <xpub> [optional: <args>]`
 
-## Operation mode
+## Operation Mode
 
-The tool derives addresses from the master public key (by scanning by accounts and indices) and displays, if appropriate, each derived address with its correspond type (legacy, SegWit, or native Segwit), its current balance, as well as its funded and spent transactions (amount and count).
 
 ## Interface
 
+### Check Balance
 When an analysis is performed, 3 elements are displayed in the following order:
 * The analysis of each derived active address (type, path, address, current balance, total in `←`, total out `→`)
 * The transactions ordered by date (date, block number, address, in `←` | out `→` | sent to self `↺`)
 * A summary: total number of transactions and total balance by address type
+
+### Xpub and Address Comparison
+The derived addresses are displayed during the analysis. Perfect matches are displayed in green (with the corresponding derivation path). Partial matches are displayed in blue (also with the derivation path). No matches are rendered in red.

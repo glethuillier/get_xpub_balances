@@ -8,7 +8,7 @@ function partialMatch(provided, derived) {
     for(var i = 0; i < derived.length; ++i) {
         const p = provided.toUpperCase()[i]
 
-        if (p == '?') {
+        if (p === '?') {
             continue;
         }
 

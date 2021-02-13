@@ -46,7 +46,7 @@ function getTxs(address) {
 
         var ins = [], outs = [];
 
-        if (tx.incoming != undefined) {   
+        if (typeof(tx.incoming) !== 'undefined') {   
             tx.incoming.inputs.forEach(vin => {       
                 ins.push({
                     address: vin.address,
@@ -55,7 +55,7 @@ function getTxs(address) {
             })
         }
 
-        if (tx.outgoing != undefined) {
+        if (typeof(tx.outgoing) !== 'undefined') {
             tx.outgoing.outputs.forEach(vout => {     
                 outs.push({
                     address: vout.address,

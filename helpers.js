@@ -1,6 +1,7 @@
 const request = require('sync-request');
 const bip32 = require('bip32');
 const chalk = require('chalk');
+const Promise = require('es6-promise').Promise;
 
 const { BITCOIN_NETWORK, LITECOIN_NETWORK } = require('./settings');
 const { transientLine } = require('./display');

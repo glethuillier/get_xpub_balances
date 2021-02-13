@@ -62,7 +62,7 @@ function scanAddresses(addressType, xpub, derivedAddresses) {
     var addresses = []
   
     for(var account = 0; account < 2; ++account) {
-      const typeAccount = account == 0 ? "external" : "internal";
+      const typeAccount = account === 0 ? "external" : "internal";
   
       display.logStatus("- scanning " + chalk.italic(typeAccount) + " addresses -");
   
@@ -86,7 +86,7 @@ function scanAddresses(addressType, xpub, derivedAddresses) {
           noTxCounter++;
           display.transientLine(/* delete address */);
   
-          if (account == 1 || noTxCounter >= MAX_EXPLORATION) {
+          if (account === 1 || noTxCounter >= MAX_EXPLORATION) {
             // TODO?: extend logic to account numbers > 1
             display.transientLine(/* delete last probing info */);
             display.logStatus("- " + chalk.italic(typeAccount) + " addresses scanned -");
@@ -140,7 +140,7 @@ function scanAddresses(addressType, xpub, derivedAddresses) {
 
 function run(xpub, account, index) {
 
-  let summary = new Map();
+  var summary = new Map();
   
   if (typeof(account) === 'undefined') {
     // Option A: no index has been provided:

@@ -36,7 +36,7 @@ function updateAddressDetails(address) {
         .concat(derivationPath.padEnd(12, ' '))
         .concat(address.toString().padEnd(46, ' '))
   
-    if (address.getStats() == undefined) {
+    if (typeof(address.getStats()) === 'undefined') {
       process.stdout.write(stats)
       return;
     }
@@ -96,7 +96,7 @@ function displaySortedAddresses(sortedAddresses) {
   function showSummary(addressType, value) {
     const balance = convertUnits(value.balance);
     
-    if (balance == 0) {
+    if (balance === 0) {
       console.log(
         chalk.grey(
           addressType.padEnd(16, ' ')
@@ -153,7 +153,7 @@ function showComparisonResult(xpub, address, result) {
       .concat("/")
       .concat(result.index)
 
-    if (typeof result.partial == 'undefined') {
+    if (typeof(result.partial) === 'undefined') {
       // full match
       console.log(chalk.greenBright(
         "The address has been derived from this xpub using derivation path "

@@ -46,13 +46,12 @@ function processFundedTransactions(address) {
     var funded = [];
 
     txs.forEach(tx => {
-        for(var i = 0; i < tx.ins.length; ++i) {
+        if (typeof(tx.ins) !== 'undefined' && tx.ins.length > 0) {
             funded.push({
                 txid: tx.txid,
                 blockHeight: tx.blockHeight,
-                amount: tx.ins[i].value
+                amount: tx.ins[0].value
             });
-            break;
         }
     })
 

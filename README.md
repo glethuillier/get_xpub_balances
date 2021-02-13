@@ -53,9 +53,6 @@ Build: `$ docker build -t xpubscan .`
 
 Run: `$ docker run xpubscan <xpub> [optional: <args>]`
 
-## Operation Mode
-
-
 ## Interface
 
 ### Check Balance

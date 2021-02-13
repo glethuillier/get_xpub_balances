@@ -1,21 +1,21 @@
 {
-  "name": "get_xpub_balances",
+  "name": "xpub-scan",
   "version": "1.0.0",
-  "description": "Check addresses balances from xpub (supported: legacy, native segwit, segwit)",
+  "description": "Master public key analysis tool",
   "main": "scan.js",
   "scripts": {
     "start": "node scan.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/glethuillier/get_xpub_balances.git"
+    "url": "git+https://github.com:LedgerHQ/xpub-scan.git"
   },
   "author": "Guillaume Lethuillier",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/glethuillier/get_xpub_balances/issues"
+    "url": "https://github.com/LedgerHQ/xpub-scan"
   },
-  "homepage": "https://github.com/glethuillier/get_xpub_balances#readme",
+  "homepage": "https://github.com/LedgerHQ/xpub-scan#readme",
   "dependencies": {
     "axios": "^0.21.1",
     "bitcoinjs-lib": "^5.2.0",

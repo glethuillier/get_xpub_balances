@@ -11,12 +11,12 @@ class Address {
     this.index = index;
   }
   
-  setTxs(txs) {
-    this.txs = txs;
+  setTransactions(transactions) {
+    this.transactions = transactions;
   }
   
-  setRawTxs(rawTxs) {
-    this.rawTxs = rawTxs;
+  setRawTransactions(rawTransactions) {
+    this.rawTransactions = rawTransactions;
   }
   
   setBalance(balance) {
@@ -66,12 +66,12 @@ class Address {
     return this.stats
   }
   
-  getTxs() {
-    return this.txs;
+  getTransactions() {
+    return this.transactions;
   }
   
-  getRawTxs() {
-    return this.rawTxs;
+  getRawTransactions() {
+    return this.rawTransactions;
   }
 }
 
@@ -79,9 +79,9 @@ class Address {
 function getLegacyAddress(xpub, account, index) {
   const { address } = bjs.payments.p2pkh({
     pubkey: bip32
-    .fromBase58(xpub, global.network)
-    .derive(account)
-    .derive(index).publicKey,
+      .fromBase58(xpub, global.network)
+      .derive(account)
+      .derive(index).publicKey,
     network: global.network
   });
   
@@ -92,9 +92,9 @@ function getLegacyAddress(xpub, account, index) {
 function getNativeSegWitAddress(xpub, account, index) {
   const { address } = bjs.payments.p2wpkh({
     pubkey: bip32
-    .fromBase58(xpub, global.network)
-    .derive(account)
-    .derive(index).publicKey,
+      .fromBase58(xpub, global.network)
+      .derive(account)
+      .derive(index).publicKey,
     network: global.network
   });
   
@@ -106,9 +106,9 @@ function getSegWitAddress(xpub, account, index) {
   const { address } = bjs.payments.p2sh({
     redeem: bjs.payments.p2wpkh({
       pubkey: bip32
-      .fromBase58(xpub, global.network)
-      .derive(account)
-      .derive(index).publicKey,
+        .fromBase58(xpub, global.network)
+        .derive(account)
+        .derive(index).publicKey,
       network: global.network
     }),
   });
@@ -120,26 +120,26 @@ function getSegWitAddress(xpub, account, index) {
 function getAddress(addressType, xpub, account, index) {
   switch(addressType) {
     case AddressType.LEGACY:
-    return getLegacyAddress(xpub, account, index);
+      return getLegacyAddress(xpub, account, index);
     case AddressType.SEGWIT:
-    return getSegWitAddress(xpub, account, index);
+      return getSegWitAddress(xpub, account, index);
     case AddressType.NATIVE:
-    return getNativeSegWitAddress(xpub, account, index);
+      return getNativeSegWitAddress(xpub, account, index);
     case AddressType.ALL:
-    return [
-      {
-        type: AddressType.LEGACY,
-        address: getLegacyAddress(xpub, account, index)
-      },
-      {
-        type: AddressType.SEGWIT,
-        address: getSegWitAddress(xpub, account, index)
-      },
-      {
-        type: AddressType.NATIVE,
-        address: getNativeSegWitAddress(xpub, account, index)
-      }
-    ];
+      return [
+        {
+          type: AddressType.LEGACY,
+          address: getLegacyAddress(xpub, account, index)
+        },
+        {
+          type: AddressType.SEGWIT,
+          address: getSegWitAddress(xpub, account, index)
+        },
+        {
+          type: AddressType.NATIVE,
+          address: getNativeSegWitAddress(xpub, account, index)
+        }
+      ];
   }
 }
 

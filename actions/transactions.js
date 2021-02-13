@@ -25,26 +25,26 @@ function getTransactions(address, derivedAddresses) {
 function preprocessTransactions(address) {
     switch(global.network) {
         case BITCOIN_NETWORK:
-        bitcoin.getTxs(address);
+        bitcoin.getTransactions(address);
         break;
         case LITECOIN_NETWORK:
-        litecoin.getTxs(address);
+        litecoin.getTransactions(address);
         break;
     }
 }
 
 // process amounts received
 function processFundedTransactions(address) {
-    // if change address: no funded txs
+    // if change address: no funded transactions
     if (address.getDerivation().account === 1) {
         address.setFunded([]);
         return;
     }
     
-    const txs = address.getTxs();
+    const transactions = address.getTransactions();
     var funded = [];
     
-    txs.forEach(tx => {
+    transactions.forEach(tx => {
         if (typeof(tx.ins) !== 'undefined' && tx.ins.length > 0) {
             funded.push({
                 txid: tx.txid,
@@ -64,12 +64,12 @@ function processFundedTransactions(address) {
 
 // process amounts sent to relevant addresses
 function processSentTransactions(address, derivedAddresses) {
-    const txs = address.getTxs();
+    const transactions = address.getTransactions();
     
     var sent = [];
     
-    for(var i = 0; i < txs.length; ++i) {
-        const tx = txs[i];
+    for(var i = 0; i < transactions.length; ++i) {
+        const tx = transactions[i];
         //const ins = tx.ins;
         const outs = tx.outs;
         const txid = tx.txid;
@@ -98,12 +98,12 @@ function processSentTransactions(address, derivedAddresses) {
 // Sort transactions by block time
 // (reversed ordering)
 function getSortedTransactions(...addresses) {
-    var txs = [], processedTxs = [];
+    var transactions = [], processedTxs = [];
 
     [].concat.apply([], addresses).forEach(address => {
   
         address.funded.forEach(tx => {
-            txs.push(
+            transactions.push(
             {
                 address: address,
                 amount: tx.amount,
@@ -117,7 +117,7 @@ function getSortedTransactions(...addresses) {
             // only process a given txid once
             if (!processedTxs.includes(tx.txid)) {
     
-                txs.push(
+                transactions.push(
                     {
                         address: address,
                         amount: -1 * tx.amount, // make it a negative number
@@ -134,16 +134,16 @@ function getSortedTransactions(...addresses) {
     });
   
     // reverse chronological order
-    txs = txs.sort(function(a, b) {
+    transactions = transactions.sort(function(a, b) {
       return b.time - a.time;
     });
 
-    return txs;
+    return transactions;
 }
 
 // eslint-disable-next-line no-unused-vars
 function showTransactions(address) {
-    console.dir(address.getTxs(), { depth: null });
+    console.dir(address.getTransactions(), { depth: null });
 }
 
 module.exports = { getStats, getTransactions, getSortedTransactions }

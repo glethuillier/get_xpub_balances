@@ -28,20 +28,20 @@ function getStats(address) {
     
     address.setStats(stats);
     address.setBalance(balance);
-    address.setRawTxs(res.data.txs);
+    address.setRawTransactions(res.data.txs);
 }
 
 // transforms raw transactions associated with an address
 // into an array of processed transactions:
 // [ { blockHeight, txid, ins: [ { address, value }... ], outs: [ { address, value }...] } ]
-function getTxs(address) {
+function getTransactions(address) {
     // 1. get raw transactions
-    const rawTxs = address.getRawTxs();
+    const rawTransactions = address.getRawTransactions();
     
     // 2. parse raw transactions
-    var txs = [];
+    var transactions = [];
     
-    rawTxs.forEach(tx => {
+    rawTransactions.forEach(tx => {
         var ins = [], outs = [];
         
         if (typeof(tx.incoming) !== 'undefined') {   
@@ -62,7 +62,7 @@ function getTxs(address) {
             })
         }
         
-        txs.push({
+        transactions.push({
             blockHeight: tx.block_no,
             time: tx.time,
             txid: tx.txid,
@@ -72,7 +72,7 @@ function getTxs(address) {
         
     });
     
-    address.setTxs(txs);
+    address.setTransactions(transactions);
 }
 
-module.exports = { getStats, getTxs }
+module.exports = { getStats, getTransactions }

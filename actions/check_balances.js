@@ -75,12 +75,11 @@ function scanAddresses(addressType, xpub, derivedAddresses) {
       const status = noTxCounter === 0 ? "analyzing" : "probing address gap"
       process.stdout.write(chalk.yellow(status + "..."));
       
-      
       getStats(address);
       
       const addressStats = address.getStats();
       
-      // here, evaluate if the address needs further evaluation
+      // here, evaluate if the address needs further analysis
       
       if (addressStats.txs_count === 0) {
         noTxCounter++;

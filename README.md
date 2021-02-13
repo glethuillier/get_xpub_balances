@@ -72,4 +72,4 @@ When an analysis is performed, 3 elements are displayed in the following order:
 
 ## Example: Full Scan
 
-![Example](./demo_balance.png)
+![Example](./demo_balance.gif)

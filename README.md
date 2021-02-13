@@ -1,15 +1,15 @@
-# Get balances from Xpub
+# Get balances from Xpub/Ltub
 
 ![XPUB](./logo.png)
 
-From an xpub, get the balances of Bitcoin legacy, native SegWit, and SegWit accounts.
+From an xpub (or Ltub), get the balances of Bitcoin or Litecoin legacy, native SegWit, and SegWit accounts.
 
 ## Features
 
-* Privacy Friendly: xpubs are not sent over the Internet: only their derived addresses are 
+* Privacy Friendly: xpubs/ltubs are not sent over the Internet: only their derived addresses are 
 * Derives specific addresses (by account+index) or all active ones
 * Supports legacy, SegWit, and Native Segwit
-* Search if a given address has been derived from an xpub
+* Search if a given address has been derived from an xpub/ltub
 
 ## Install
 

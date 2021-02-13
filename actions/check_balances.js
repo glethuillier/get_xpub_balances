@@ -75,10 +75,13 @@ function scanAddresses(addressType, xpub, derivedAddresses) {
         const status = noTxCounter === 0 ? "analyzing" : "probing address gap"
         process.stdout.write(chalk.yellow(status + "..."));
   
+        
         getStats(address);
   
         const addressStats = address.getStats();
   
+        // here, evaluate if the address needs further evaluation
+
         if (addressStats.txs_count === 0) {
           noTxCounter++;
           display.transientLine(/* delete address */);
@@ -96,8 +99,14 @@ function scanAddresses(addressType, xpub, derivedAddresses) {
           noTxCounter = 0;
         }
   
+        // if the address is an active one, fetch its transactions
+        // (note: with the current implementation, this is done in
+        //  _getStats_ function, called above, but in the future,
+        //  the API may change and require two different requests.
+        //  Therefore, this call to _getTransactions_ would then
+        //  be justified).
         getTransactions(address, derivedAddresses);
-  
+
         totalBalance += address.getBalance();
   
         const tx = {

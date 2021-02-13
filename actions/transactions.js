@@ -46,16 +46,14 @@ function processFundedTransactions(address) {
     var funded = [];
 
     txs.forEach(tx => {
-        tx.outs.forEach(out => {
-            // select tx where address is in tx out
-            if (out.address == address.toString()) {
-                funded.push({
-                    txid: tx.txid,
-                    blockHeight: tx.blockHeight,
-                    amount: out.value
-                })
-            }
-        })
+        for(var i = 0; i < tx.ins.length; ++i) {
+            funded.push({
+                txid: tx.txid,
+                blockHeight: tx.blockHeight,
+                amount: tx.ins[i].value
+            });
+            break;
+        }
     })
 
     address.setFunded(funded);
@@ -68,18 +66,14 @@ function processFundedTransactions(address) {
 // process amounts sent to relevant addresses
 function processSentTransactions(address, derivedAddresses) {
     const txs = address.getTxs();
-    var sent = []
+
+    var sent = [];
 
     for(var i = 0; i < txs.length; ++i) {
         const tx = txs[i];
-        const ins = tx.ins;
+        //const ins = tx.ins;
         const outs = tx.outs;
         const txid = tx.txid;
-
-        // exclude addresses not present in txs ins
-        if (!ins.some(transaction => transaction.address === address.toString())) {
-            continue;
-        }
 
         outs.forEach(out => {
             // exclude internal (i.e. change) addresses

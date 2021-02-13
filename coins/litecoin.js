@@ -1,10 +1,16 @@
 const { LITECOIN_API } = require('../settings');
 const helpers = require('../helpers');
 
+// Note: Bitcoin and Litecoin are currently identically implemented
+//       because they are using the same API.
+//       However, in the future this may change. Therefore, each coin
+//       should have its own implementation.
+
 // returns the basic stats related to an address:
 // its balance, funded and spend sums and counts
 function getStats(address) {
-    const res = helpers.getJSON(LITECOIN_API.concat(address.toString()));
+    const url = LITECOIN_API.concat(address.toString());
+    const res = helpers.getJSON(url);
   
     const funded_sum = parseFloat(res.data.received_value);
     const balance = parseFloat(res.data.balance);
@@ -13,11 +19,9 @@ function getStats(address) {
     const stats = {
       txs_count: res.data.total_txs,
       funded: {
-        count: undefined, // TODO
         sum: funded_sum
       },
       spent: {
-        count: undefined, // TODO
         sum: spent_sum
       }
     }

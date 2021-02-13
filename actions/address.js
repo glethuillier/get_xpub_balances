@@ -14,6 +14,10 @@ class Address {
     setTxs(txs) {
       this.txs = txs;
     }
+
+    setRawTxs(rawTxs) {
+      this.rawTxs = rawTxs;
+    }
   
     setBalance(balance) {
         this.balance = balance;
@@ -64,6 +68,10 @@ class Address {
 
     getTxs() {
       return this.txs;
+    }
+
+    getRawTxs() {
+      return this.rawTxs;
     }
   }
 

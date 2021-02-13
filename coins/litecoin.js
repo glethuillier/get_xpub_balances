@@ -6,12 +6,12 @@ const helpers = require('../helpers');
 function getStats(address) {
     const res = helpers.getJSON(LITECOIN_API.concat(address.toString()));
   
-    const funded_sum = res.total_received;
-    const spent_sum = res.total_sent;
-    const balance = funded_sum - spent_sum;
-  
+    const funded_sum = parseFloat(res.data.received_value);
+    const balance = parseFloat(res.data.balance);
+    const spent_sum = funded_sum - balance;
+
     const stats = {
-      txs_count: res.n_tx,
+      txs_count: res.data.total_txs,
       funded: {
         count: undefined, // TODO
         sum: funded_sum
@@ -24,47 +24,45 @@ function getStats(address) {
   
     address.setStats(stats);
     address.setBalance(balance);
+    address.setRawTxs(res.data.txs);
 }
 
 // transforms raw transactions associated with an address
 // into an array of processed transactions:
 // [ { blockHeight, txid, ins: [ { address, value }... ], outs: [ { address, value }...] } ]
 function getTxs(address) {
-    // 1. fetch raw transactions
-    const url = LITECOIN_API.concat(address.toString()).concat("/full");
-    const rawTxs = helpers.getJSON(url);
+    // 1. get raw transactions
+    const rawTxs = address.getRawTxs();
 
     // 2. parse raw transactions
     var txs = [];
 
-    rawTxs.txs.forEach(tx => {
-        const blockHeight = tx.block_height;
+    rawTxs.forEach(tx => {
+        const blockHeight = tx.block_no;
 
         var ins = [], outs = [];
 
-        tx.inputs.forEach(vin => {
-            const value = vin.output_value;
-            vin.addresses.forEach(address => {
+        if (tx.incoming != undefined) {   
+            tx.incoming.inputs.forEach(vin => {       
                 ins.push({
-                    address: address,
-                    value: value
+                    address: vin.address,
+                    value: parseFloat(tx.incoming.value)
                 })
             })
-        })
+        }
 
-        tx.outputs.forEach(vout => {
-            const value = vout.value;
-            vout.addresses.forEach(address => {
+        if (tx.outgoing != undefined) {
+            tx.outgoing.outputs.forEach(vout => {     
                 outs.push({
-                    address: address,
-                    value: value
+                    address: vout.address,
+                    value: parseFloat(vout.value)
                 })
             })
-        })
+        }
 
         txs.push({
             blockHeight: blockHeight,
-            txid: tx.hash,
+            txid: tx.txid,
             ins: ins,
             outs: outs
         })

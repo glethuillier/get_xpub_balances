@@ -11,7 +11,7 @@ const BITCOIN_API = 'https://blockstream.info/api/address/';
 
 // TODO(litecoin)
 // eslint-disable-next-line no-unused-vars
-const LITECOIN_API = 'https://api.blockcypher.com/v1/ltc/main/addrs/'
+const LITECOIN_API = 'https://sochain.com/api/v2/address/LTC/'
 
 // max number of addresses to probe when checking a possible gap between derivation indices
 // (that is: range of indices not used for derivation)

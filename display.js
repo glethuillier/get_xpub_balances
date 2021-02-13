@@ -1,15 +1,24 @@
 var readline = require('readline');
 const chalk = require('chalk');
-const sb = require('satoshi-bitcoin');
+//const sb = require('satoshi-bitcoin');
 
-const { BITCOIN_NETWORK } = require('./settings')
+//const { BITCOIN_NETWORK } = require('./settings')
 
 function convertUnits(amount) {
-  if (global.network === BITCOIN_NETWORK) {
-    return String(sb.toBitcoin(amount));
+  // Currently, this function does not convert the amounts
+  // into relevant units. But in the future, if the API
+  // changes, it would allow to change the unit 
+  // depending on the network.
+  // For example:
+  // if (global.network === BITCOIN_NETWORK) {
+  //   return sb.toBitcoin(amount);  
+  // }
+  if (amount === 0) {
+    return String(amount);
   }
   else {
-    return String(amount);
+    // 8 digital places max without trailing 0s
+    return String(parseFloat(amount.toFixed(8)));
   }
 }
 
@@ -21,7 +30,6 @@ function updateAddressDetails(address) {
     const derivationPath = String("m/".concat(account).concat("/").concat(index));
     const addressStats = address.getStats();
   
-    
     // _type_  path  address ...
     var stats = 
       chalk.italic("  " + addressType.padEnd(16, ' '))

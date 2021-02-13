@@ -2,16 +2,15 @@ const coininfo = require('coininfo');
 
 // GENERAL
 // -------
+
 const VERBOSE = false;
 
 // CHECK BALANCES
 // --------------
 
-const BITCOIN_API = 'https://blockstream.info/api/address/';
+const BITCOIN_API = 'https://sochain.com/api/v2/address/BTC/';
 
-// TODO(litecoin)
-// eslint-disable-next-line no-unused-vars
-const LITECOIN_API = 'https://sochain.com/api/v2/address/LTC/'
+const LITECOIN_API = 'https://sochain.com/api/v2/address/LTC/';
 
 // max number of addresses to probe when checking a possible gap between derivation indices
 // (that is: range of indices not used for derivation)

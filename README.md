@@ -70,22 +70,6 @@ When an analysis is performed, 3 elements are displayed in the following order:
 
 ![interface 2](./interface_2.png)
 
-## Example 1: specific account and index
+## Example: Full Scan
 
-Scan addresses derived from account `1` and index `46`:
-
-```
-$ node main.js xpub6CMDks...9N1gz1ZT 1 46
-  Legacy          m/1/46      1HCojkXWkZdKhUqaZUo42TFZJ2F51QgtXe            0.00009834      +0.00009834 ←
-  SegWit          m/1/46      3B4FPjNYUEs6Tq2qzky5b73duMu1np5vS6            0               +0          ←
-  Native SegWit   m/1/46      bc1qkx7e5t3vzyvnlj6euwqagds8zq53wqjx0gcn03    0               +0          ←
-
-Summary
-Legacy          0.00009834
-SegWit          0
-Native SegWit   0
-```
-
-## Example 2: full scan
-
-![Example](./full_example.png)
+![Example](./demo_balance.png)
